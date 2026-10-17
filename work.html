@@ -1374,8 +1374,23 @@ function updateHeaderClock(){const el=$('header-clock');if(el)el.textContent=new
 load();demoData=JSON.parse(JSON.stringify(data));
 window.CRPWA.setSnapshotProvider(()=>({
  state:data,shiftId:syncShiftId,revision:syncRevision,
- baseState:syncBaseState,guests:REMOTE_GUESTS,lists:LIST_CATALOG,
+ baseState:syncBaseState,dirty:syncDirty,guests:REMOTE_GUESTS,lists:LIST_CATALOG,
  capturedAt:new Date().toISOString()
 }));
-initLiveShift();health();loadFlavorCatalog();loadRemoteGuests();setupClearControls();setupCatalogMenus();
+window.CRPWA.setRestoreSnapshot(snapshot=>{
+ if(!snapshot||!snapshot.state||!snapshot.shiftId)return false;
+ data=snapshot.state;syncShiftId=snapshot.shiftId;syncRevision=Number(snapshot.revision)||0;
+ syncBaseState=snapshot.baseState||null;syncDirty=Number(snapshot.dirty)||0;
+ REMOTE_GUESTS=Array.isArray(snapshot.guests)?snapshot.guests:[];
+ LIST_CATALOG=snapshot.lists||LIST_CATALOG;remoteGuestsLoaded=true;flavorCatalogLoaded=true;
+ syncMode='offline';lastServerOK=0;syncError='Зашифрованная локальная копия';
+ paint();renderSyncStatus();return true;
+});
+window.CRPWA.setOnConnected(()=>{
+ if(syncDirty&&syncShiftId){
+  syncMode='shared';flushLiveSync();
+ }else initLiveShift();
+ health();loadFlavorCatalog();loadRemoteGuests();
+});
+setupClearControls();setupCatalogMenus();
 </script></body></html>
