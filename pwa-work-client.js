@@ -14,11 +14,12 @@
  '<div style="margin-top:18px;border-top:1px solid #e2e6e9;padding-top:14px">'+
  '<label>Фраза для шифрования локальной копии (от 12 символов)<input id="cr-offline-secret" type="password" style="box-sizing:border-box;width:100%;padding:11px;border:1px solid #d1d8dc;border-radius:8px;margin-top:5px" autocomplete="new-password"></label>'+
  '<button id="cr-secure-cache" style="margin-top:8px;padding:9px 12px">Разблокировать защищённое хранилище</button>'+
- '<div id="cr-local-preview" style="font-size:12px;color:#5a6c77;margin-top:9px"></div></div>'+
- '<p style="font-size:12px;color:#7c8892;margin-top:15px">В офлайне доступна только зашифрованная локальная копия для просмотра. Запись без Google пока заблокирована.</p></div>';
+ '<div id="cr-local-preview" style="font-size:12px;color:#5a6c77;margin-top:9px"></div>'+
+ '<button id="cr-continue-offline" disabled style="margin-top:10px;padding:10px 12px">Продолжить сохранённую смену офлайн</button></div>'+
+ '<p style="font-size:12px;color:#7c8892;margin-top:15px">Офлайн-режим доступен после шифрованного сохранения смены. Изменения отправляются через Google после восстановления связи.</p></div>';
  let nonce='',peer=null,peerOrigin='',popup=null,ready=false,connected=false,lastHeartbeat=0;
  const queue=[],pending=new Map();
- let snapshotProvider=null,saveTimer=null;
+ let snapshotProvider=null,restoreSnapshot=null,onConnected=null,saveTimer=null,offlineEditing=false,unlockedSnapshot=null;
  const safeUrl=value=>{
   try{const url=new URL(String(value||'').trim());return url.protocol==='https:'&&url.hostname==='script.google.com'&&
    /^\/macros\/s\/[A-Za-z0-9_-]+\/(dev|exec)\/?$/.test(url.pathname)?url.href:''}catch(e){return ''}
@@ -26,6 +27,7 @@
  const gate=msg=>{
   connected=false;window.CRPWA.connected=false;
   document.getElementById('cr-gate-status').textContent=msg||'Нет подтверждённого соединения';
+  document.getElementById('cr-continue-offline').disabled=!unlockedSnapshot?.state;
   overlay.style.display='grid';
  };
  const receive=event=>{
@@ -36,8 +38,9 @@
   if(msg.type==='ready'){
    peer=event.source;peerOrigin=event.origin;lastHeartbeat=Date.now();ready=true;
    if(!connected){
-    connected=true;window.CRPWA.connected=true;overlay.style.display='none';
+    connected=true;offlineEditing=false;window.CRPWA.connected=true;overlay.style.display='none';
     while(queue.length){const job=queue.shift();dispatch(job)}
+    if(typeof onConnected==='function')try{onConnected()}catch(e){console.error(e)}
    }
   }
   if(msg.type==='result'){
@@ -49,7 +52,7 @@
  };
  window.addEventListener('message',receive);
  function dispatch(job){
-  if(!connected||!peer){queue.push(job);return}
+  if(!connected||!peer){if(offlineEditing){job.fail?.({message:'Для этой операции требуется Google-сервер'});return}queue.push(job);return}
   job.id=crypto.randomUUID();
   job.timer=setTimeout(()=>{
    if(!pending.has(job.id))return;
@@ -74,11 +77,13 @@
  function scheduleEncryptedSnapshot(){
   if(!snapshotProvider||!window.CRWorkStore?.isUnlocked())return;
   clearTimeout(saveTimer);saveTimer=setTimeout(async()=>{
-   try{const data=snapshotProvider();if(data?.state)await window.CRWorkStore.save(data)}
+   try{const data=snapshotProvider();if(data?.state){await window.CRWorkStore.save(data);unlockedSnapshot=data}}
    catch(e){console.error('Encrypted copy could not be updated',e)}
   },650);
  }
- window.CRPWA={connected:false,setSnapshotProvider:fn=>{snapshotProvider=fn},persistEncrypted:scheduleEncryptedSnapshot};
+ window.CRPWA={connected:false,setSnapshotProvider:fn=>{snapshotProvider=fn},
+  setRestoreSnapshot:fn=>{restoreSnapshot=fn},setOnConnected:fn=>{onConnected=fn},
+  persistEncrypted:scheduleEncryptedSnapshot,isOfflineEditing:()=>offlineEditing};
  const connect=()=>{
   const url=safeUrl(document.getElementById('cr-owner-url').value);
   if(!url){gate('Проверь адрес: нужна ссылка script.google.com/macros/s/.../dev или /exec');return}
@@ -97,6 +102,8 @@
    try{
     const data=await window.CRWorkStore.unlock(input.value);
     input.value='';
+    unlockedSnapshot=data||null;
+    document.getElementById('cr-continue-offline').disabled=!data?.state;
     const state=data?.state||null;
     if(state){
      const n=state.hookahs?.length||0,day=state.shifts?.[0]?.day||'—';
@@ -106,9 +113,22 @@
     if(connected)scheduleEncryptedSnapshot();
    }catch(e){preview.textContent='Не удалось открыть хранилище: '+String(e.message||e)}
   };
+  document.getElementById('cr-continue-offline').onclick=()=>{
+   if(!unlockedSnapshot?.state||!restoreSnapshot)return;
+   if(!restoreSnapshot(unlockedSnapshot)){
+    document.getElementById('cr-gate-status').textContent='Не удалось восстановить локальную смену';return;
+   }
+   offlineEditing=true;connected=false;window.CRPWA.connected=false;
+   overlay.style.display='none';
+  };
  };
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
- window.addEventListener('offline',()=>gate('Нет интернета. Редактирование реальной смены отключено.'));
+ window.addEventListener('offline',()=>{
+  if(!offlineEditing)gate('Нет интернета. Открой зашифрованную копию, если она была сохранена.');
+ });
+ window.addEventListener('online',()=>{
+  if(offlineEditing)gate('Интернет восстановлен. Подключи Google для отправки изменений.');
+ });
  setInterval(()=>{
   if(connected&&(!navigator.onLine||!popup||popup.closed||Date.now()-lastHeartbeat>12000))
    gate('Связь с Google прервана. Подключись снова перед изменениями.');
