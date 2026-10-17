@@ -17,6 +17,10 @@
  '<div id="cr-local-preview" style="font-size:12px;color:#5a6c77;margin-top:9px"></div>'+
  '<button id="cr-continue-offline" disabled style="margin-top:10px;padding:10px 12px">Продолжить сохранённую смену офлайн</button></div>'+
  '<p style="font-size:12px;color:#7c8892;margin-top:15px">Офлайн-режим доступен после шифрованного сохранения смены. Изменения отправляются через Google после восстановления связи.</p></div>';
+ const enableOffline=document.createElement('button');
+ enableOffline.textContent='Включить офлайн';
+ enableOffline.id='cr-enable-offline';
+ enableOffline.style.cssText='display:none;position:fixed;z-index:9800;right:12px;bottom:12px;background:#1d313a;color:white;padding:11px 16px;border:0;border-radius:10px;box-shadow:0 3px 15px #0003;font:13px Arial,sans-serif';
  const toolbar=document.createElement('div');
  toolbar.id='cr-offline-toolbar';
  toolbar.style.cssText='display:none;position:fixed;z-index:9900;top:10px;left:50%;transform:translateX(-50%);background:#16252c;color:white;padding:9px 12px;border-radius:12px;box-shadow:0 4px 20px #0004;font:12px Arial,sans-serif;align-items:center;gap:10px';
@@ -45,6 +49,7 @@
    peer=event.source;peerOrigin=event.origin;lastHeartbeat=Date.now();ready=true;
    if(!connected){
     connected=true;offlineEditing=false;window.CRPWA.connected=true;overlay.style.display='none';toolbar.style.display='none';
+    enableOffline.style.display=window.CRWorkStore?.isUnlocked()?'none':'block';
     while(queue.length){const job=queue.shift();dispatch(job)}
     if(typeof onConnected==='function')try{onConnected()}catch(e){console.error(e)}
    }
@@ -108,7 +113,12 @@
   document.getElementById('cr-gate-status').textContent='Открой окно Google и дождись подтверждения доступа…';
  };
  const start=()=>{
-  document.body.append(overlay);document.body.append(toolbar);
+  document.body.append(overlay);document.body.append(toolbar);document.body.append(enableOffline);
+  enableOffline.onclick=()=>{
+   if(!connected)return;
+   document.getElementById('cr-gate-status').textContent='Задай фразу для зашифрованной копии. Google-сессия остаётся подключённой.';
+   overlay.style.display='grid';
+  };
   document.getElementById('cr-owner-url').value=localStorage.getItem(KEY)||'';
   document.getElementById('cr-save-local').onclick=async()=>{
    const label=document.getElementById('cr-local-status');label.textContent='Шифруем и сохраняем…';
@@ -130,7 +140,7 @@
      preview.textContent='Зашифрованная копия открыта: смена '+day+', кальянов '+n+
       ', броней '+(state.bookings?.length||0)+'. Для редактирования подключись к Google.';
     }else preview.textContent='Хранилище разблокировано. После подключения к Google доступная смена сохранится в зашифрованном виде.';
-    if(connected)scheduleEncryptedSnapshot();
+    if(connected){scheduleEncryptedSnapshot();overlay.style.display='none';enableOffline.style.display='none';}
    }catch(e){preview.textContent='Не удалось открыть хранилище: '+String(e.message||e)}
   };
   document.getElementById('cr-continue-offline').onclick=()=>{
