@@ -2,7 +2,7 @@
 /** Device-local encrypted offline snapshot. Encryption key never leaves memory. */
 (function(){
  const DB_NAME='cocktail-room-secure-v1',STORE='encrypted',ENCODER=new TextEncoder(),DECODER=new TextDecoder();
- let key=null,salt=null;
+ let key=null,salt=null,writeQueue=Promise.resolve();
  const bytes=a=>Array.from(new Uint8Array(a));
  const buffer=a=>new Uint8Array(a).buffer;
  function open(){
@@ -50,10 +50,15 @@
  async function save(payload){
   if(!key||!salt)throw new Error('Локальное шифрование не разблокировано');
   if(!payload||typeof payload!=='object')throw new Error('Invalid snapshot');
-  const iv=crypto.getRandomValues(new Uint8Array(12));
-  const ciphertext=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,ENCODER.encode(JSON.stringify(payload)));
-  await write({id:'snapshot',format:1,salt:bytes(salt),iv:bytes(iv),data:bytes(ciphertext),savedAt:new Date().toISOString()});
-  return true;
+  const frozen=JSON.stringify(payload),currentKey=key,currentSalt=bytes(salt);
+  const task=async()=>{
+   const iv=crypto.getRandomValues(new Uint8Array(12));
+   const ciphertext=await crypto.subtle.encrypt({name:'AES-GCM',iv},currentKey,ENCODER.encode(frozen));
+   await write({id:'snapshot',format:1,salt:currentSalt,iv:bytes(iv),data:bytes(ciphertext),savedAt:new Date().toISOString()});
+   return true;
+  };
+  writeQueue=writeQueue.then(task,task);
+  return writeQueue;
  }
  window.CRWorkStore={unlock,save,hasSnapshot:async()=>!!(await read()),isUnlocked:()=>!!key,lock:()=>{key=null;salt=null}};
 })();
