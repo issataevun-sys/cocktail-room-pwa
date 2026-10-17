@@ -149,7 +149,7 @@
     document.getElementById('cr-gate-status').textContent='Не удалось восстановить локальную смену';return;
    }
    offlineEditing=true;connected=false;window.CRPWA.connected=false;
-   overlay.style.display='none';toolbar.style.display='flex';
+   overlay.style.display='none';toolbar.style.display='flex';enableOffline.style.display='none';
   };
  };
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
