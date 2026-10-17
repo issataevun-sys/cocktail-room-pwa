@@ -1,0 +1,21 @@
+{
+  "name": "COCKTAIL ROOM — офлайн-прототип",
+  "short_name": "Cocktail Room",
+  "description": "Локальный тестовый PWA-прототип. Без подключения к рабочей базе.",
+  "start_url": "./",
+  "scope": "./",
+  "id": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f5f6",
+  "theme_color": "#15191d",
+  "lang": "ru",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
