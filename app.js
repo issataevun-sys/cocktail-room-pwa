@@ -137,6 +137,12 @@ async function renderWork(root){
     ' · броней: '+summary.bookings+' · открытых столов: '+summary.tables+
     ' · сумма: '+Number(summary.revenue||0).toLocaleString('ru-RU')+' ₸':
     'Доступ подтверждён. Открытой смены нет.';
+   if(summary.discrepancy){
+    const p=summary.projection||{};
+    status.textContent+=' ВНИМАНИЕ: в HookahOrders сохранено '+Number(p.hookahs||0)+
+     ' кальянов на '+Number(p.revenue||0).toLocaleString('ru-RU')+
+     ' ₸, но текущее состояние отличается. Автоматического объединения не было.';
+   }
   }else status.textContent='Проверка: '+result.error;
  };
  $('#open-owner-app').onclick=()=>{
