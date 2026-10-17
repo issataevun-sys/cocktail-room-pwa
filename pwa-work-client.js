@@ -11,9 +11,14 @@
  '<label style="display:block;margin-bottom:12px">Адрес Google Apps Script<input id="cr-owner-url" type="url" style="box-sizing:border-box;width:100%;padding:12px;border:1px solid #d1d8dc;border-radius:8px;margin-top:6px" placeholder="https://script.google.com/macros/s/.../dev"></label>'+
  '<p id="cr-gate-status" style="color:#7a4c25;font-size:13px">Ожидаем подключения</p>'+
  '<button id="cr-connect" style="padding:12px 20px;background:#18242b;color:white;border:0;border-radius:9px">Подключиться через Google</button>'+
- '<p style="font-size:12px;color:#7c8892;margin-top:15px">Реальные данные не записываются в тестовую IndexedDB. Офлайн-операции пока заблокированы.</p></div>';
+ '<div style="margin-top:18px;border-top:1px solid #e2e6e9;padding-top:14px">'+
+ '<label>Фраза для шифрования локальной копии (от 12 символов)<input id="cr-offline-secret" type="password" style="box-sizing:border-box;width:100%;padding:11px;border:1px solid #d1d8dc;border-radius:8px;margin-top:5px" autocomplete="new-password"></label>'+
+ '<button id="cr-secure-cache" style="margin-top:8px;padding:9px 12px">Разблокировать защищённое хранилище</button>'+
+ '<div id="cr-local-preview" style="font-size:12px;color:#5a6c77;margin-top:9px"></div></div>'+
+ '<p style="font-size:12px;color:#7c8892;margin-top:15px">В офлайне доступна только зашифрованная локальная копия для просмотра. Запись без Google пока заблокирована.</p></div>';
  let nonce='',peer=null,peerOrigin='',popup=null,ready=false,connected=false,lastHeartbeat=0;
  const queue=[],pending=new Map();
+ let snapshotProvider=null,saveTimer=null;
  const safeUrl=value=>{
   try{const url=new URL(String(value||'').trim());return url.protocol==='https:'&&url.hostname==='script.google.com'&&
    /^\/macros\/s\/[A-Za-z0-9_-]+\/(dev|exec)\/?$/.test(url.pathname)?url.href:''}catch(e){return ''}
@@ -66,7 +71,14 @@
   }});
  }
  window.google={script:{run:runner(null,null)}};
- window.CRPWA={connected:false};
+ function scheduleEncryptedSnapshot(){
+  if(!snapshotProvider||!window.CRWorkStore?.isUnlocked())return;
+  clearTimeout(saveTimer);saveTimer=setTimeout(async()=>{
+   try{const data=snapshotProvider();if(data?.state)await window.CRWorkStore.save(data)}
+   catch(e){console.error('Encrypted copy could not be updated',e)}
+  },650);
+ }
+ window.CRPWA={connected:false,setSnapshotProvider:fn=>{snapshotProvider=fn},persistEncrypted:scheduleEncryptedSnapshot};
  const connect=()=>{
   const url=safeUrl(document.getElementById('cr-owner-url').value);
   if(!url){gate('Проверь адрес: нужна ссылка script.google.com/macros/s/.../dev или /exec');return}
@@ -80,6 +92,20 @@
   document.body.append(overlay);
   document.getElementById('cr-owner-url').value=localStorage.getItem(KEY)||'';
   document.getElementById('cr-connect').onclick=connect;
+  document.getElementById('cr-secure-cache').onclick=async()=>{
+   const input=document.getElementById('cr-offline-secret'),preview=document.getElementById('cr-local-preview');
+   try{
+    const data=await window.CRWorkStore.unlock(input.value);
+    input.value='';
+    const state=data?.state||null;
+    if(state){
+     const n=state.hookahs?.length||0,day=state.shifts?.[0]?.day||'—';
+     preview.textContent='Зашифрованная копия открыта: смена '+day+', кальянов '+n+
+      ', броней '+(state.bookings?.length||0)+'. Для редактирования подключись к Google.';
+    }else preview.textContent='Хранилище разблокировано. После подключения к Google доступная смена сохранится в зашифрованном виде.';
+    if(connected)scheduleEncryptedSnapshot();
+   }catch(e){preview.textContent='Не удалось открыть хранилище: '+String(e.message||e)}
+  };
  };
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
  window.addEventListener('offline',()=>gate('Нет интернета. Редактирование реальной смены отключено.'));
