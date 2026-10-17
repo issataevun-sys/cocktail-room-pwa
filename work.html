@@ -87,8 +87,9 @@ input::placeholder,textarea::placeholder{color:#949ea6;opacity:1;font-weight:400
 <nav><button class="active" data-tab="home">Обзор</button><button data-tab="shifts">Текущая смена</button><button data-tab="past">Прошлые смены</button><button data-tab="guests">Гости</button><button data-tab="lists">Списки</button><button data-tab="system">Система</button></nav>
 <div class="sidefoot">Только владелец · переход на общую базу<br>Офлайн-PWA ещё не готова</div></aside>
 <main><header><div><div class="sub">COCKTAIL ROOM / OWNER</div><h1 id="title">Обзор</h1></div><div class="header-meta"><time id="header-clock">--:--</time><span class="pill" id="server">Проверка…</span></div></header>
-<div class="notice">ОБЩАЯ СМЕНА: действия со столами, кальянами, бронями, VIP и мойкой отправляются в серверное состояние Google Sheets. Следи за индикатором синхронизации. Автономный запуск PWA и права сотрудников ещё в разработке.</div>
+<div class="notice">РАБОЧИЙ РЕЖИМ PWA: для действий со сменой необходимо активное защищённое Google-подключение. Если окно авторизации закрыто, редактирование блокируется. Офлайн-копия доступна после включения шифрования, только для просмотра.</div>
 <div id="content"></div></main></div><div id="modal-host"></div><div id="message" role="status"></div>
+<script src="./secure-work-store.js"></script>
 <script src="./pwa-work-client.js"></script>
 <script>
 'use strict';
@@ -1370,5 +1371,11 @@ function setupClearControls(){
  decorate();
 }
 function updateHeaderClock(){const el=$('header-clock');if(el)el.textContent=new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}updateHeaderClock();setInterval(updateHeaderClock,1000);
-load();demoData=JSON.parse(JSON.stringify(data));initLiveShift();health();loadFlavorCatalog();loadRemoteGuests();setupClearControls();setupCatalogMenus();
+load();demoData=JSON.parse(JSON.stringify(data));
+window.CRPWA.setSnapshotProvider(()=>({
+ state:data,shiftId:syncShiftId,revision:syncRevision,
+ baseState:syncBaseState,guests:REMOTE_GUESTS,lists:LIST_CATALOG,
+ capturedAt:new Date().toISOString()
+}));
+initLiveShift();health();loadFlavorCatalog();loadRemoteGuests();setupClearControls();setupCatalogMenus();
 </script></body></html>
