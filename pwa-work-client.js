@@ -12,7 +12,7 @@
  '<p id="cr-gate-status" style="color:#7a4c25;font-size:13px">Ожидаем подключения</p>'+
  '<button id="cr-connect" style="padding:12px 20px;background:#18242b;color:white;border:0;border-radius:9px">Подключиться через Google</button>'+
  '<p style="font-size:12px;color:#7c8892;margin-top:15px">Реальные данные не записываются в тестовую IndexedDB. Офлайн-операции пока заблокированы.</p></div>';
- let nonce='',peer=null,popup=null,ready=false,connected=false,lastHeartbeat=0;
+ let nonce='',peer=null,peerOrigin='',popup=null,ready=false,connected=false,lastHeartbeat=0;
  const queue=[],pending=new Map();
  const safeUrl=value=>{
   try{const url=new URL(String(value||'').trim());return url.protocol==='https:'&&url.hostname==='script.google.com'&&
@@ -29,7 +29,7 @@
   let host='';try{host=new URL(event.origin).hostname}catch(e){}
   if(host!=='script.google.com'&&host!=='script.googleusercontent.com'&&!host.endsWith('.script.googleusercontent.com'))return;
   if(msg.type==='ready'){
-   peer=event.source;lastHeartbeat=Date.now();ready=true;
+   peer=event.source;peerOrigin=event.origin;lastHeartbeat=Date.now();ready=true;
    if(!connected){
     connected=true;window.CRPWA.connected=true;overlay.style.display='none';
     while(queue.length){const job=queue.shift();dispatch(job)}
@@ -52,7 +52,7 @@
    job.fail?.({message:'Прервано соединение с Google. Данные не подтверждены сервером.'});
   },45000);
   pending.set(job.id,job);
-  try{peer.postMessage({channel:CHANNEL,nonce,type:'rpc',id:job.id,method:job.method,args:job.args},'*')}
+  try{peer.postMessage({channel:CHANNEL,nonce,type:'rpc',id:job.id,method:job.method,args:job.args},peerOrigin)}
   catch(error){clearTimeout(job.timer);pending.delete(job.id);gate('Не удалось связаться с Google');job.fail?.({message:String(error)})}
  }
  const allowed=new Set(['crWebTestHealth','crSyncGet','crSyncPut','crLiveOpenShift','crLiveCloseShift','crLiveGetCurrentShift','crGetGuests','crSaveGuest','crGetLists','crListsSave','crListsSetActive','crSetWashingSchedule','crGetHistoricalGuestVisits','crPastShiftIndex','crPastShiftDetail']);
@@ -70,7 +70,7 @@
  const connect=()=>{
   const url=safeUrl(document.getElementById('cr-owner-url').value);
   if(!url){gate('Проверь адрес: нужна ссылка script.google.com/macros/s/.../dev или /exec');return}
-  localStorage.setItem(KEY,url);nonce=crypto.randomUUID();peer=null;ready=false;
+  localStorage.setItem(KEY,url);nonce=crypto.randomUUID();peer=null;peerOrigin='';ready=false;
   const bridge=new URL(url);bridge.searchParams.set('view','bridge');bridge.searchParams.set('nonce',nonce);
   popup=window.open(bridge.href,'cr_owner_'+nonce,'width=650,height=620');
   if(!popup){gate('Разреши всплывающие окна Chrome для COCKTAIL ROOM');return}
