@@ -28,7 +28,7 @@ async function offlineDiagnostics(){
   workerReady=!!reg?.active;
   if(workerReady&&'caches' in window){
    const cache=await caches.open('cocktail-room-shell-v11');
-   const assets=['./index.html','./app.js','./db.js','./shifts-ui.js','./styles.css','./manifest.webmanifest','./icon.svg'];
+   const assets=['./index.html','./app.js','./db.js','./shifts-ui.js','./styles.css','./manifest.webmanifest','./icon.svg','./work.html','./pwa-work-client.js','./secure-work-store.js'];
    cacheReady=(await Promise.all(assets.map(path=>cache.match(path)))).every(Boolean);
   }
  }catch(err){dbError=dbError||String(err.message||err)}
