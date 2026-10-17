@@ -1,10 +1,13 @@
-name: Publish Cocktail Room PWA test shell
+name: Publish COCKTAIL ROOM PWA
 on:
   push:
     branches: [main]
     paths:
       - index.html
       - app.js
+      - work.html
+      - pwa-work-client.js
+      - secure-work-store.js
       - db.js
       - shifts-ui.js
       - styles.css
@@ -32,7 +35,7 @@ jobs:
       - name: Prepare static-only site
         run: |
           mkdir -p public
-          cp index.html app.js db.js shifts-ui.js styles.css sw.js manifest.webmanifest icon.svg public/
+          cp index.html app.js db.js shifts-ui.js styles.css sw.js manifest.webmanifest icon.svg work.html pwa-work-client.js secure-work-store.js public/
           touch public/.nojekyll
       - name: Configure Pages
         uses: actions/configure-pages@v5
