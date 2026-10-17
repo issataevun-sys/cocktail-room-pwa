@@ -217,6 +217,7 @@ function flushLiveSync(){
    if(window.CRWorkStore?.isUnlocked())window.CRPWA.persistEncrypted();
    scheduleSync();
   }
+  if(window.CRWorkStore?.isUnlocked())window.CRPWA.persistEncrypted();
   renderSyncStatus();
  }).withFailureHandler(err=>{
   syncBusy=false;syncMode='offline';syncError=String(err.message||err);
@@ -244,6 +245,7 @@ function initLiveShift(){
    else{syncMode='shared';scheduleSync();}
   }else{data=res.state;syncMode='shared';syncDirty=0;}
   paint();renderSyncStatus();
+  if(window.CRWorkStore?.isUnlocked())window.CRPWA.persistEncrypted();
  }).withFailureHandler(err=>{
   let pending=null;try{pending=JSON.parse(sessionStorage.getItem(pendingKey)||'null')}catch(e){}
   if(pending&&pending.shiftId&&pending.state){
