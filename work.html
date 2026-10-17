@@ -108,10 +108,10 @@ function save(){
   syncDirty++;
   const pending={shiftId:syncShiftId,revision:syncRevision,state:data};
   pending.baseState=syncBaseState;
-  try{sessionStorage.setItem(pendingKey,JSON.stringify(pending))}catch(e){syncError='Не удалось сохранить локальный резерв: '+e.message;syncMode='offline'}
+  if(window.CRWorkStore?.isUnlocked())window.CRPWA.persistEncrypted();
   if(syncMode==='shared')scheduleSync();
   renderSyncStatus();
- }else if(syncMode==='demo'){sessionStorage.setItem(storageKey,JSON.stringify(data))}
+ }else if(syncMode==='demo'){/* Public PWA never persists real guest data unencrypted. */}
 }
 function renderSyncStatus(){
  const pill=$('server'),el=$('live-sync-status');
@@ -214,7 +214,7 @@ function flushLiveSync(){
     renderSyncStatus();return;
    }
    data=combined;
-   sessionStorage.setItem(pendingKey,JSON.stringify({shiftId:syncShiftId,revision:syncRevision,state:data,baseState:syncBaseState}));
+   if(window.CRWorkStore?.isUnlocked())window.CRPWA.persistEncrypted();
    scheduleSync();
   }
   renderSyncStatus();
