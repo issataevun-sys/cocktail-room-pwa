@@ -81,32 +81,31 @@ function checkOwnerAppUrl(value){
  }catch(err){return ''}
 }
 function probeOwnerBridge(url){
+ // Called directly from a button click: browser may block popups if opened later.
+ const bridge=new URL(url);
+ bridge.searchParams.set('view','bridge');
+ const popup=window.open(bridge.href,'cocktailRoomGoogleSession','width=700,height=650');
+ if(!popup)return Promise.resolve({ok:false,error:'Браузер заблокировал окно проверки. Разреши всплывающие окна для COCKTAIL ROOM PWA.'});
  return new Promise(resolve=>{
-  const CHANNEL='cocktail-room-bridge-v1',id=crypto.randomUUID();
-  const frame=document.createElement('iframe');
-  frame.title='Проверка Google авторизации';
-  frame.setAttribute('aria-hidden','true');
-  frame.style.cssText='position:absolute;width:1px;height:1px;opacity:0;pointer-events:none';
-  let completed=false,peer=null;
+  const CHANNEL='cocktail-room-bridge-v1';
+  let settled=false;
   const finish=value=>{
-   if(completed)return;completed=true;window.removeEventListener('message',receive);clearTimeout(timer);frame.remove();resolve(value);
+   if(settled)return;settled=true;
+   window.removeEventListener('message',receive);
+   clearTimeout(timeout);
+   resolve(value);
   };
-  const receive=event=>{
-   if(event.data?.channel!==CHANNEL)return;
-   const host=(()=>{try{return new URL(event.origin).hostname}catch(e){return ''}})();
+  function receive(event){
+   if(event.data?.channel!==CHANNEL||event.data?.action!=='summary-result')return;
+   let host='';
+   try{host=new URL(event.origin).hostname}catch(e){}
    if(host!=='script.google.com'&&host!=='script.googleusercontent.com'&&!host.endsWith('.script.googleusercontent.com'))return;
-   if(event.data.action==='ready'){
-    peer=event.source;
-    peer.postMessage({channel:CHANNEL,action:'health',id},event.origin);
-   }else if(event.data.id===id){
-    finish(event.data.ok?{ok:true,version:event.data.result?.version}:{ok:false,error:event.data.error||'Сервер не подтвердил сессию'});
-   }
-  };
+   const result=event.data.result;
+   if(result?.ok&&result.summary?.ok)finish({ok:true,summary:result.summary});
+   else finish({ok:false,error:String(result?.error||'Google не подтвердил сессию')});
+  }
   window.addEventListener('message',receive);
-  const timer=setTimeout(()=>finish({ok:false,error:'Нет ответа от Google Apps Script за 15 секунд. Возможно, браузер блокирует вход Google во встроенном окне. Открой рабочую ссылку в отдельной вкладке.'}),15000);
-  const bridge=new URL(url);bridge.searchParams.set('view','bridge');
-  frame.src=bridge.href;
-  document.body.append(frame);
+  const timeout=setTimeout(()=>finish({ok:false,error:'Автоматический ответ не пришёл за 30 секунд. Посмотри результат непосредственно в открывшемся окне Google Apps Script; если там показана смена, авторизация работает.'}),30000);
  });
 }
 async function renderWork(root){
@@ -131,7 +130,14 @@ async function renderWork(root){
   if(!url)return notify('Сначала сохрани адрес Apps Script');
   const status=$('#owner-bridge-result');status.textContent='Проверяем Google-сессию…';
   const result=await probeOwnerBridge(url);
-  status.textContent=result.ok?'Google-сессия подтверждена: '+(result.version||'версия не указана'):'Проверка не прошла: '+result.error;
+  if(result.ok){
+   const summary=result.summary||{};
+   status.textContent=summary.active?
+    'Доступ подтверждён. Смена: '+(summary.date||'—')+' · кальянов: '+summary.hookahs+
+    ' · броней: '+summary.bookings+' · открытых столов: '+summary.tables+
+    ' · сумма: '+Number(summary.revenue||0).toLocaleString('ru-RU')+' ₸':
+    'Доступ подтверждён. Открытой смены нет.';
+  }else status.textContent='Проверка: '+result.error;
  };
  $('#open-owner-app').onclick=()=>{
   const url=checkOwnerAppUrl($('#owner-app-form [name="url"]').value);
