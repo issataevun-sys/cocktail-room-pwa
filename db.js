@@ -19,3 +19,36 @@ export async function verifyLocalStorage(){
   return true;
  }finally{db.close()}
 }
+
+/** Set a device-local, owner-supplied Apps Script URL. Never sync/export this setting. */
+export async function getLocalSetting(key){
+ const db=await openDB();
+ try{
+  const tx=db.transaction('meta','readonly'),q=tx.objectStore('meta').get('setting:'+key);
+  const record=await new Promise((resolve,reject)=>{q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)});
+  await complete(tx);return record?.value||'';
+ }finally{db.close()}
+}
+export async function setLocalSetting(key,value){
+ const db=await openDB();
+ try{const tx=db.transaction('meta','readwrite');tx.objectStore('meta').put({key:'setting:'+key,value});await complete(tx)}
+ finally{db.close()}
+}
+/** Human-confirmed backup recovery, only when the local database is empty. */
+export async function restoreTestBackup(backup){
+ if(!backup||backup.format!=='cocktail-room-local-backup-v1')throw new Error('Неверный формат тестовой копии');
+ const stores=['guests','hookahs','shifts','outbox'];
+ for(const key of stores){
+  if(!Array.isArray(backup[key])||backup[key].length>10000)throw new Error('Неверный раздел: '+key);
+  if((await all(key)).length)throw new Error('В этой базе уже есть данные. Восстановление заблокировано, чтобы не потерять записи.');
+ }
+ const db=await openDB();
+ try{
+  const tx=db.transaction(stores,'readwrite');
+  for(const key of stores)for(const row of backup[key]){
+   if(!row||typeof row!=='object'||!row[key==='outbox'?'operationId':'id'])throw new Error('Неверный ID записи');
+   tx.objectStore(key).put(row);
+  }
+  await complete(tx);return stores.reduce((n,k)=>n+backup[k].length,0);
+ }finally{db.close()}
+}
