@@ -27,7 +27,7 @@ async function offlineDiagnostics(){
   const reg=await navigator.serviceWorker?.getRegistration('./');
   workerReady=!!reg?.active;
   if(workerReady&&'caches' in window){
-   const cache=await caches.open('cocktail-room-shell-v6');
+   const cache=await caches.open('cocktail-room-shell-v9');
    const assets=['./index.html','./app.js','./db.js','./shifts-ui.js','./styles.css','./manifest.webmanifest','./icon.svg'];
    cacheReady=(await Promise.all(assets.map(path=>cache.match(path)))).every(Boolean);
   }
@@ -45,7 +45,7 @@ function guideForDevice(){
 async function renderInstall(root){
  const d=await offlineDiagnostics();
  const mark=v=>'<strong class="'+(v?'ok':'pending')+'">'+(v?'Готово':'Нет')+'</strong>';
- root.innerHTML='<div class="panel"><div class="split"><h2>Установка и офлайн-режим</h2><span class="tag">PWA · v0.8</span></div>'+
+ root.innerHTML='<div class="panel"><div class="split"><h2>Установка и офлайн-режим</h2><span class="tag">PWA · v1.0 beta</span></div>'+
  '<div class="warn">Это отдельный автономный ТЕСТОВЫЙ интерфейс. Он пока не связан с рабочим COCKTAIL ROOM в Apps Script и Google Sheets. Не вводи персональные данные и настоящие смены.</div>'+
  '<div class="offline-checks">'+
  '<div>Локальная база IndexedDB '+mark(d.indexedDBReady)+'</div>'+
@@ -150,7 +150,7 @@ async function renderWork(root){
   const url=checkOwnerAppUrl($('#owner-app-form [name="url"]').value);
   if(!url)return notify('Сначала сохрани адрес Apps Script');
   localStorage.setItem('cr-pwa-work-url',url);
-  window.open('./work.html','_blank');
+  window.location.assign('./work.html');
  };
  $('#open-owner-app').onclick=()=>{
   const url=checkOwnerAppUrl($('#owner-app-form [name="url"]').value);
@@ -163,7 +163,7 @@ async function render(){document.querySelectorAll('nav button').forEach(b=>b.cla
 if(view==='dashboard'){const [guests,hookahs,queue]=await Promise.all(['guests','hookahs','outbox'].map(all));root.innerHTML='<div class="cards">'+[['Кальянов в тестовой базе',hookahs.length],['Гостей в тестовой базе',guests.length],['Ожидают передачи',queue.length]].map(x=>'<div class="card"><div class="muted">'+x[0]+'</div><div class="stat">'+x[1]+'</div></div>').join('')+'</div><div class="panel"><div class="split"><h2>Рабочий COCKTAIL ROOM</h2><button type="button" id="go-working">Настроить связь</button><button type="button" id="go-full-work">Полный интерфейс</button></div><p class="muted">Для настоящих смен используй защищённую Google Apps Script-версию. Тестовая локальная база не синхронизируется с ней.</p></div><div class="panel"><h2>Техническая проверка</h2><div class="warn">Тестовый прототип. Авторизация, шифрование и синхронизация ещё не подключены. Реальные данные вводить нельзя.</div><p class="muted">После первого открытия проверьте отключение интернета, создание записи, перезапуск и наличие записей.</p></div>';}
 if(view==='dashboard'){
  $('#go-working').onclick=()=>{view='work';render().catch(console.error)};
- $('#go-full-work').onclick=()=>window.open('./work.html','_blank');
+ $('#go-full-work').onclick=()=>window.location.assign('./work.html');
 }
 if(view==='shifts') { await renderShifts(root, async message=>{notify(message);await render()},appConfirm); }
 if(view==='guests'){const items=(await all('guests')).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));root.innerHTML='<div class="panel"><div class="split"><h2>Тестовые гости</h2><span class="tag">Только локально</span></div><form id="guest-form"><div class="formgrid"><label class="field">Имя<input name="name" maxlength="100" required placeholder="Тестовый гость"></label><label class="field">Категория<select name="category"><option>Гость</option><option>Новый гость</option><option>Постоянщик</option><option>Редкий гость</option><option>Конфликтный</option></select></label></div><div class="formactions"><button class="primary" type="submit">Добавить гостя</button></div></form></div><div class="panel"><h2>Записи</h2><table><thead><tr><th>Имя</th><th>Категория</th><th>Добавлен</th><th></th></tr></thead><tbody>'+ (items.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.category)+'</td><td>'+date(x.createdAt)+'</td><td><button data-delete="'+esc(x.id)+'">Удалить</button></td></tr>').join('')||'<tr><td colspan="4" class="empty">Пусто</td></tr>')+'</tbody></table></div>';$('#guest-form').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);await putAndQueue('guests',{id:crypto.randomUUID(),name:String(f.get('name')).trim(),category:String(f.get('category')),createdAt:new Date().toISOString()});notify('Сохранено локально');await render()};root.querySelectorAll('[data-delete]').forEach(b=>b.onclick=async()=>{if(await appConfirm('Удалить тестового гостя?')){await removeAndQueue('guests',b.dataset.delete);await render()}})}
