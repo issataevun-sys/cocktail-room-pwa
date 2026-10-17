@@ -11,6 +11,7 @@
  '<label style="display:block;margin-bottom:12px">Адрес Google Apps Script<input id="cr-owner-url" type="url" style="box-sizing:border-box;width:100%;padding:12px;border:1px solid #d1d8dc;border-radius:8px;margin-top:6px" placeholder="https://script.google.com/macros/s/.../dev"></label>'+
  '<p id="cr-gate-status" style="color:#7a4c25;font-size:13px">Ожидаем подключения</p>'+
  '<button id="cr-connect" style="padding:12px 20px;background:#18242b;color:white;border:0;border-radius:9px">Подключиться через Google</button>'+
+ '<button id="cr-open-original" style="margin-left:6px;padding:12px 14px;border:1px solid #d0d8dc;background:white;border-radius:9px">Открыть рабочую версию</button>'+
  '<div style="margin-top:18px;border-top:1px solid #e2e6e9;padding-top:14px">'+
  '<label>Фраза для шифрования локальной копии (от 12 символов)<input id="cr-offline-secret" type="password" style="box-sizing:border-box;width:100%;padding:11px;border:1px solid #d1d8dc;border-radius:8px;margin-top:5px" autocomplete="new-password"></label>'+
  '<button id="cr-secure-cache" style="margin-top:8px;padding:9px 12px">Разблокировать защищённое хранилище</button>'+
@@ -27,7 +28,7 @@
  toolbar.innerHTML='<span id="cr-local-status">Офлайн · изменения на устройстве</span>'+
  '<button id="cr-save-local" style="padding:7px 9px;border-radius:6px">Сохранить локально</button>'+
  '<button id="cr-reconnect" style="padding:7px 9px;border-radius:6px">Подключить Google</button>';
- let nonce='',peer=null,peerOrigin='',popup=null,ready=false,connected=false,lastHeartbeat=0;
+ let nonce='',peer=null,peerOrigin='',popup=null,ready=false,connected=false,lastHeartbeat=0,connectTimer=null;
  const queue=[],pending=new Map();
  let snapshotProvider=null,restoreSnapshot=null,onConnected=null,saveTimer=null,offlineEditing=false,unlockedSnapshot=null;
  const safeUrl=value=>{
@@ -36,6 +37,7 @@
  };
  const gate=msg=>{
   connected=false;window.CRPWA.connected=false;
+  clearTimeout(connectTimer);
   document.getElementById('cr-gate-status').textContent=msg||'Нет подтверждённого соединения';
   document.getElementById('cr-continue-offline').disabled=!unlockedSnapshot?.state;
   overlay.style.display='grid';
@@ -47,6 +49,7 @@
   if(host!=='script.google.com'&&host!=='script.googleusercontent.com'&&!host.endsWith('.script.googleusercontent.com'))return;
   if(msg.type==='ready'){
    peer=event.source;peerOrigin=event.origin;lastHeartbeat=Date.now();ready=true;
+   clearTimeout(connectTimer);
    if(!connected){
     connected=true;offlineEditing=false;window.CRPWA.connected=true;overlay.style.display='none';toolbar.style.display='none';
     enableOffline.style.display=window.CRWorkStore?.isUnlocked()?'none':'block';
@@ -110,7 +113,12 @@
   const bridge=new URL(url);bridge.searchParams.set('view','bridge');bridge.searchParams.set('nonce',nonce);
   popup=window.open(bridge.href,'cr_owner_'+nonce,'width=650,height=620');
   if(!popup){gate('Разреши всплывающие окна Chrome для COCKTAIL ROOM');return}
-  document.getElementById('cr-gate-status').textContent='Открой окно Google и дождись подтверждения доступа…';
+  document.getElementById('cr-gate-status').textContent='Ожидаем подтверждения подключения из окна Google…';
+  clearTimeout(connectTimer);
+  connectTimer=setTimeout(()=>{
+   if(connected)return;
+   gate('Google подтвердил вход, но Chrome не передал сообщение между окнами. Это ограничение текущего моста. Нажми «Открыть рабочую версию» — она продолжит работать без повторного ввода данных.');
+  },14000);
  };
  const start=()=>{
   document.body.append(overlay);document.body.append(toolbar);document.body.append(enableOffline);
@@ -127,6 +135,11 @@
   };
   document.getElementById('cr-reconnect').onclick=()=>gate('Для синхронизации повторно подключи Google');
   document.getElementById('cr-connect').onclick=connect;
+  document.getElementById('cr-open-original').onclick=()=>{
+   const url=safeUrl(document.getElementById('cr-owner-url').value);
+   if(!url){gate('Сначала укажи правильную ссылку Apps Script');return}
+   window.open(url,'_blank','noopener,noreferrer');
+  };
   document.getElementById('cr-secure-cache').onclick=async()=>{
    const input=document.getElementById('cr-offline-secret'),preview=document.getElementById('cr-local-preview');
    try{
