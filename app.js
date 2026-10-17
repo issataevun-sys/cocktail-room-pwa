@@ -1,6 +1,16 @@
 import {all,putAndQueue,removeAndQueue,exportBackup,verifyLocalStorage,getLocalSetting,setLocalSetting,restoreTestBackup} from './db.js';
 import {activeShift,renderShifts} from './shifts-ui.js';
-const $=s=>document.querySelector(s);let view='dashboard',installEvent=null;
+const $=s=>document.querySelector(s);
+ async function launchWork(url){
+  if(navigator.onLine){window.location.assign(url);return}
+  try{
+   if(await window.CRWorkStore?.hasSnapshot?.()){
+    window.location.assign('./work.html');return;
+   }
+  }catch(error){console.error('Offline snapshot check failed',error)}
+  notify('Нет интернета и сохранённой зашифрованной смены. Подключи интернет для первого запуска.');
+ }
+let view='dashboard',installEvent=null;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date=v=>new Date(v).toLocaleString('ru-RU',{dateStyle:'short',timeStyle:'short'});
 const notify=s=>{const e=$('#toast');e.textContent=s;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2200)};
@@ -146,15 +156,6 @@ async function renderWork(root){
    }
   }else status.textContent='Проверка: '+result.error;
  };
- async function launchWork(url){
-  if(navigator.onLine){window.location.assign(url);return}
-  try{
-   if(await window.CRWorkStore?.hasSnapshot?.()){
-    window.location.assign('./work.html');return;
-   }
-  }catch(error){console.error('Offline snapshot check failed',error)}
-  notify('Нет интернета и сохранённой зашифрованной смены. Подключи интернет для первого запуска.');
- }
  $('#open-full-work').onclick=()=>{
   const url=checkOwnerAppUrl($('#owner-app-form [name="url"]').value);
   if(!url)return notify('Сначала сохрани адрес Apps Script');
