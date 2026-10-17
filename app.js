@@ -27,7 +27,7 @@ async function offlineDiagnostics(){
   const reg=await navigator.serviceWorker?.getRegistration('./');
   workerReady=!!reg?.active;
   if(workerReady&&'caches' in window){
-   const cache=await caches.open('cocktail-room-shell-v5');
+   const cache=await caches.open('cocktail-room-shell-v6');
    const assets=['./index.html','./app.js','./db.js','./shifts-ui.js','./styles.css','./manifest.webmanifest','./icon.svg'];
    cacheReady=(await Promise.all(assets.map(path=>cache.match(path)))).every(Boolean);
   }
@@ -45,7 +45,7 @@ function guideForDevice(){
 async function renderInstall(root){
  const d=await offlineDiagnostics();
  const mark=v=>'<strong class="'+(v?'ok':'pending')+'">'+(v?'Готово':'Нет')+'</strong>';
- root.innerHTML='<div class="panel"><div class="split"><h2>Установка и офлайн-режим</h2><span class="tag">PWA · v0.7</span></div>'+
+ root.innerHTML='<div class="panel"><div class="split"><h2>Установка и офлайн-режим</h2><span class="tag">PWA · v0.8</span></div>'+
  '<div class="warn">Это отдельный автономный ТЕСТОВЫЙ интерфейс. Он пока не связан с рабочим COCKTAIL ROOM в Apps Script и Google Sheets. Не вводи персональные данные и настоящие смены.</div>'+
  '<div class="offline-checks">'+
  '<div>Локальная база IndexedDB '+mark(d.indexedDBReady)+'</div>'+
