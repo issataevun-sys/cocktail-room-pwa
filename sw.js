@@ -1,24 +1,32 @@
-const CACHE='cocktail-room-shell-v5';
+const CACHE='cocktail-room-shell-v6';
 const PREFIX='cocktail-room-shell-';
 const ASSETS=['./','./index.html','./styles.css','./app.js','./db.js','./shifts-ui.js','./manifest.webmanifest','./icon.svg'];
+const FILES=new Set(['','index.html','styles.css','app.js','db.js','shifts-ui.js','manifest.webmanifest','icon.svg']);
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });
 self.addEventListener('activate',event=>{
- event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith(PREFIX)&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));
+ event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith(PREFIX)&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));
+});
+self.addEventListener('message',event=>{
+ if(event.data?.type==='SKIP_WAITING')self.skipWaiting();
 });
 self.addEventListener('fetch',event=>{
- const request=event.request,url=new URL(request.url);
- if(request.method!=='GET'||url.origin!==self.location.origin||!url.pathname.startsWith(new URL('./',self.registration.scope).pathname))return;
- // Only cache explicit offline shell files; never cache app-server responses or private content.
- const path=url.pathname.slice(new URL('./',self.registration.scope).pathname.length);
- if(!['','index.html','styles.css','app.js','db.js','shifts-ui.js','manifest.webmanifest','icon.svg'].includes(path))return;
+ const req=event.request,url=new URL(req.url),root=new URL('./',self.registration.scope);
+ if(req.method!=='GET'||url.origin!==root.origin||!url.pathname.startsWith(root.pathname))return;
+ const path=url.pathname.slice(root.pathname.length);
+ if(!FILES.has(path))return; // Never cache protected data or server calls.
  event.respondWith((async()=>{
   const cache=await caches.open(CACHE);
-  const cached=await cache.match(request,{ignoreSearch:true});
-  if(cached)return cached;
-  try{return await fetch(request)}catch(error){
-   if(request.mode==='navigate'){const fallback=await cache.match('./index.html');if(fallback)return fallback}
+  try{
+   // Network first: deploy updates are picked up while online. Cache still works offline.
+   const response=await fetch(req,{cache:'no-store'});
+   if(response.ok&&response.type==='basic')await cache.put(req,response.clone());
+   return response;
+  }catch(error){
+   const cached=await cache.match(req,{ignoreSearch:true})||
+    (req.mode==='navigate'?await cache.match('./index.html'):null);
+   if(cached)return cached;
    throw error;
   }
  })());
