@@ -146,11 +146,20 @@ async function renderWork(root){
    }
   }else status.textContent='Проверка: '+result.error;
  };
+ async function launchWork(url){
+  if(navigator.onLine){window.location.assign(url);return}
+  try{
+   if(await window.CRWorkStore?.hasSnapshot?.()){
+    window.location.assign('./work.html');return;
+   }
+  }catch(error){console.error('Offline snapshot check failed',error)}
+  notify('Нет интернета и сохранённой зашифрованной смены. Подключи интернет для первого запуска.');
+ }
  $('#open-full-work').onclick=()=>{
   const url=checkOwnerAppUrl($('#owner-app-form [name="url"]').value);
   if(!url)return notify('Сначала сохрани адрес Apps Script');
   localStorage.setItem('cr-pwa-work-url',url);
-  window.location.assign(url);
+  launchWork(url);
  };
  $('#open-owner-app').onclick=()=>{
   const url=checkOwnerAppUrl($('#owner-app-form [name="url"]').value);
@@ -166,7 +175,7 @@ if(view==='dashboard'){
  $('#go-full-work').onclick=()=>{
   const url=checkOwnerAppUrl(localStorage.getItem('cr-pwa-work-url')||'');
   if(!url){view='work';render().catch(console.error);notify('Сначала укажи адрес рабочего Google Apps Script');return}
-  window.location.assign(url);
+  launchWork(url);
  };
 }
 if(view==='shifts') { await renderShifts(root, async message=>{notify(message);await render()},appConfirm); }
