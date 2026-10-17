@@ -166,14 +166,28 @@
   };
  };
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+ document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden'&&window.CRWorkStore?.isUnlocked()){
+   persistNow().catch(error=>console.error('Не удалось сохранить зашифрованную смену при сворачивании',error));
+  }
+ });
+ window.addEventListener('pagehide',()=>{
+  if(window.CRWorkStore?.isUnlocked()){
+   persistNow().catch(error=>console.error('Не удалось сохранить зашифрованную смену перед закрытием',error));
+  }
+ });
  window.addEventListener('offline',()=>{
   if(!offlineEditing)gate('Нет интернета. Открой зашифрованную копию, если она была сохранена.');
  });
  window.addEventListener('online',()=>{
-  if(offlineEditing)gate('Интернет восстановлен. Подключи Google для отправки изменений.');
+  if(offlineEditing){
+   persistNow().catch(error=>console.error('Не удалось сохранить изменения перед подключением',error));
+   gate('Интернет восстановлен. Подключи Google для безопасной сверки изменений.');
+  }
  });
  setInterval(()=>{
-  if(connected&&(!navigator.onLine||!popup||popup.closed||Date.now()-lastHeartbeat>12000))
+  // Отсутствие запросов не является обрывом соединения. Проверяем окно и сеть.
+  if(connected&&(!navigator.onLine||!popup||popup.closed))
    gate('Связь с Google прервана. Подключись снова перед изменениями.');
  },3000);
 })();
