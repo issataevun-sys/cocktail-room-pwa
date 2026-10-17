@@ -80,6 +80,35 @@ function checkOwnerAppUrl(value){
    /^\/macros\/s\/[A-Za-z0-9_-]+\/(dev|exec)\/?$/.test(url.pathname)?url.href:'';
  }catch(err){return ''}
 }
+function probeOwnerBridge(url){
+ return new Promise(resolve=>{
+  const CHANNEL='cocktail-room-bridge-v1',id=crypto.randomUUID();
+  const frame=document.createElement('iframe');
+  frame.title='Проверка Google авторизации';
+  frame.setAttribute('aria-hidden','true');
+  frame.style.cssText='position:absolute;width:1px;height:1px;opacity:0;pointer-events:none';
+  let completed=false,peer=null;
+  const finish=value=>{
+   if(completed)return;completed=true;window.removeEventListener('message',receive);clearTimeout(timer);frame.remove();resolve(value);
+  };
+  const receive=event=>{
+   if(event.data?.channel!==CHANNEL)return;
+   const host=(()=>{try{return new URL(event.origin).hostname}catch(e){return ''}})();
+   if(host!=='script.google.com'&&host!=='script.googleusercontent.com'&&!host.endsWith('.script.googleusercontent.com'))return;
+   if(event.data.action==='ready'){
+    peer=event.source;
+    peer.postMessage({channel:CHANNEL,action:'health',id},event.origin);
+   }else if(event.data.id===id){
+    finish(event.data.ok?{ok:true,version:event.data.result?.version}:{ok:false,error:event.data.error||'Сервер не подтвердил сессию'});
+   }
+  };
+  window.addEventListener('message',receive);
+  const timer=setTimeout(()=>finish({ok:false,error:'Нет ответа от Google Apps Script за 15 секунд. Возможно, браузер блокирует вход Google во встроенном окне. Открой рабочую ссылку в отдельной вкладке.'}),15000);
+  const bridge=new URL(url);bridge.searchParams.set('view','bridge');
+  frame.src=bridge.href;
+  document.body.append(frame);
+ });
+}
 async function renderWork(root){
  const saved=await getLocalSetting('ownerAppUrl'),configured=!!checkOwnerAppUrl(saved);
  root.innerHTML='<div class="panel"><h2>Рабочий COCKTAIL ROOM</h2>'+
@@ -88,13 +117,21 @@ async function renderWork(root){
  '<form id="owner-app-form"><label class="field">Адрес защищённой версии'+
  '<input name="url" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" value="'+esc(saved)+'"></label>'+
  '<div class="formactions"><button type="submit">Сохранить адрес</button>'+
- '<button type="button" class="primary" id="open-owner-app" '+(configured?'':'disabled')+'>Открыть рабочую смену</button></div></form>'+
+ '<button type="button" id="owner-bridge-probe" '+(configured?'':'disabled')+'>Проверить доступ</button>'+
+ '<button type="button" class="primary" id="open-owner-app" '+(configured?'':'disabled')+'>Открыть рабочую смену</button></div></form><p id="owner-bridge-result" class="muted"></p>'+
  '<p class="muted">Допускается только адрес https://script.google.com/macros/s/.../dev или /exec. Адрес сохраняется на этом устройстве. Пароли и токены здесь не хранятся.</p>'+
  '<h3>Режимы</h3><p class="muted">В рабочей версии доступны зал, кальяны, гости, брони, VIP, мойка, история и справочники. Для настоящего офлайн-создания этих операций необходим отдельный защищённый канал синхронизации.</p></div>';
  $('#owner-app-form').onsubmit=async e=>{
   e.preventDefault();const url=checkOwnerAppUrl(new FormData(e.target).get('url'));
   if(!url)return notify('Нужен HTTPS-адрес Apps Script /dev либо /exec');
   await setLocalSetting('ownerAppUrl',url);notify('Адрес сохранён на устройстве');await renderWork(root);
+ };
+ $('#owner-bridge-probe').onclick=async()=>{
+  const url=checkOwnerAppUrl($('#owner-app-form [name="url"]').value);
+  if(!url)return notify('Сначала сохрани адрес Apps Script');
+  const status=$('#owner-bridge-result');status.textContent='Проверяем Google-сессию…';
+  const result=await probeOwnerBridge(url);
+  status.textContent=result.ok?'Google-сессия подтверждена: '+(result.version||'версия не указана'):'Проверка не прошла: '+result.error;
  };
  $('#open-owner-app').onclick=()=>{
   const url=checkOwnerAppUrl($('#owner-app-form [name="url"]').value);
