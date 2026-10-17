@@ -1,0 +1,1374 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#1b2024;background:#f4f5f6}
+*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}
+button{cursor:pointer;border:1px solid #dce0e3;background:#fff;color:#1e272d;border-radius:10px;padding:11px 13px}
+button.primary{background:#20282e;color:#fff;border-color:#20282e}
+button:disabled{opacity:.45;cursor:default}button.danger{color:#992d30}
+.shell{display:flex;min-height:100vh}.side{width:220px;flex-shrink:0;background:#171d22;color:white;padding:25px 13px;display:flex;flex-direction:column;gap:18px}.logo{font-weight:800;letter-spacing:1px;padding:0 10px}.logo small{display:block;color:#a4b0b8;font-size:11px;letter-spacing:0;font-weight:400;margin-top:8px}
+nav{display:flex;flex-direction:column;gap:6px}nav button{border:0;background:transparent;color:#c9d0d5;text-align:left;padding:13px}nav button.active{background:#333d44;color:white}
+.sidefoot{margin-top:auto;font-size:12px;color:#abb5bc;line-height:1.55}
+main{min-width:0;width:100%;padding:24px 28px;max-width:1280px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px}
+h1{margin:0;font-size:27px}h2{margin:0 0 15px;font-size:19px}.sub{font-size:12px;color:#77838d}
+.pill{padding:8px 11px;background:#fff;border-radius:50px;font-size:12px;border:1px solid #dce0e2}
+.box{background:white;border:1px solid #e5e8ea;border-radius:14px;padding:18px;margin:0 0 15px}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.metric{background:#fff;border-radius:12px;padding:16px;border:1px solid #e4e8ea}
+.metric strong{display:block;font-size:26px;margin-top:9px}.muted{color:#79848d;font-size:13px}
+.notice{background:#fff8e9;border:1px solid #ead8af;border-radius:9px;padding:13px;font-size:13px;line-height:1.5;margin-bottom:18px}
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#5c6870}
+input,select{width:100%;background:white;color:#192229;border:1px solid #d3d8dc;border-radius:9px;padding:10px 11px;min-height:42px}
+.actions{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin-top:13px}
+.list{display:grid;gap:9px}.item{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid #e5e8ea;border-radius:10px;padding:12px}
+.item strong{display:block;margin-bottom:5px}.tag{background:#eef0f2;border-radius:40px;padding:5px 8px;font-size:11px}
+.empty{padding:24px 0;text-align:center;color:#919aa0;font-size:13px}
+.workspace-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}.workspace-head h2{margin:0}.table-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}.table-tile{min-height:76px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:7px;background:#f9fafb}.table-tile strong{font-size:21px}.table-tile small{font-size:11px;color:#7a858e}details.box summary{cursor:pointer;font-weight:650;padding:4px 0}details.box .list{margin-top:14px}@media(max-width:900px){.table-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}@media(max-width:700px){.table-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.table-tile{min-height:125px;gap:4px}.table-tile.opened{background:#edf7f0;border-color:#9cc8aa}.table-tile.selected{outline:2px solid #20282e}.tiletimer{display:block;font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap;color:#364c58}.timer-due{color:#b13a32;font-weight:700}.checkline{flex-direction:row;align-items:center;justify-content:flex-start;gap:8px;min-height:42px}.checkline input{width:17px;min-height:17px;accent-color:#20282e}.wide{grid-column:1/-1}.sectionhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}.sectionhead h2{margin:0}.smallaction{padding:7px 10px;font-size:12px}.table-grid{grid-template-columns:repeat(5,minmax(0,1fr))}@media(max-width:900px){.table-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:700px){.table-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#message{position:fixed;bottom:18px;right:18px;background:#20282e;color:white;border-radius:10px;padding:12px 15px;display:none;max-width:90vw}
+@media(max-width:700px){.shell{display:block}.side{position:static;width:100%;padding:14px}.logo{margin-bottom:1px}.sidefoot{display:none}nav{flex-direction:row;overflow-x:auto}nav button{white-space:nowrap;padding:10px;font-size:13px}main{padding:15px}h1{font-size:23px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.formgrid{grid-template-columns:1fr}}
+
+.shift-layout{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(275px,1fr);gap:14px;align-items:start}
+.mapbox{padding:12px}.hall{position:relative;width:100%;aspect-ratio:1.42;min-height:410px;border:1px solid #ced3d5;border-radius:12px;background:#e9e9e6;overflow:hidden}
+.wall{position:absolute;background:#fff;border:1px solid #aaa;pointer-events:none}.wall.upper{left:23%;top:20%;width:61%;height:4%}.wall.middle{left:23%;top:62%;width:61%;height:4%}.wall.left{left:22%;top:0;width:2.3%;height:63%}.wall.centerleft{left:43%;top:34%;width:2.2%;height:30%}.wall.centerright{left:68%;top:34%;width:2.2%;height:30%}.wall.barright{left:83%;top:63%;width:2%;height:37%}
+.hall-label{position:absolute;font-weight:700;letter-spacing:.04em;font-size:13px;pointer-events:none}.vip-label{left:5%;top:7%;font-size:22px}.entry-label{left:50%;top:64%;transform:translateX(-50%)}.bar-label{right:1%;top:70%;writing-mode:vertical-rl;letter-spacing:.2em}
+.hall-table{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:3px;min-width:0;border:1.5px solid #909aa1;border-radius:6px;background:#f9fafb;z-index:1;overflow:hidden}
+.hall-table strong{font-size:18px;line-height:1}.hall-table small{font-size:10px;color:#5c6570}.hall-table.occupied{background:#e5f3e7;border-color:#68a87e}.hall-table.selected{outline:2px solid #20282e;outline-offset:1px}.hall-table.has-booking:not(.occupied){background:#fff5dc;border-color:#d6b55a}
+.hall-table .tiletimer{font-size:10px;line-height:1.1;color:#263842}.hall-table .timer-due{color:#af302c}
+.bookings-panel{max-height:780px;overflow:auto}.booking-item{border:1px solid #e2e7e8;border-radius:10px;padding:11px;margin-top:9px}.booking-item strong{display:block}.booking-item .actions{justify-content:flex-start;margin-top:9px}
+.modal-backdrop{position:fixed;inset:0;background:rgba(10,18,24,.53);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-card{background:#fff;width:min(680px,100%);max-height:calc(100vh - 32px);overflow:auto;border-radius:16px;padding:20px;box-shadow:0 16px 65px #0004}
+.modal-card.large{width:min(850px,100%)}.modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}.modal-head h2{margin:0}.modal-close{font-size:19px;padding:5px 11px}
+.modal-body .item{margin-bottom:9px}.booking-highlight{border-color:#4f9b70}
+@media(max-width:1050px){.shift-layout{grid-template-columns:1fr}.bookings-panel{max-height:none}}
+@media(max-width:650px){.hall{min-height:300px}.hall-table strong{font-size:14px}.hall-table small,.hall-table .tiletimer{font-size:8px}.modal-card{padding:13px}.modal-backdrop{padding:7px}.hall-label{font-size:10px}.vip-label{font-size:16px}}
+
+.compact-shift{padding:11px 14px;margin-bottom:9px}.compact-shift .sectionhead{margin-bottom:6px}.compact-shift h2{font-size:17px}
+.shift-people{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:8px;align-items:end}
+.shift-people input{min-height:34px;padding:6px 8px;font-size:13px}.shift-people label{font-size:11px}
+.compact-metrics{gap:8px;margin-bottom:10px}.compact-metrics .metric{padding:8px 12px;display:flex;gap:10px;align-items:baseline;justify-content:space-between;min-width:0}
+.compact-metrics .metric strong{font-size:19px;margin:0;white-space:nowrap}.compact-metrics .metric .muted{font-size:12px}
+.hall-table{overflow:visible;padding:3px 1px;gap:2px}.hall-table strong{font-size:clamp(12px,1.2vw,18px)}
+.hall-table small{font-size:9px;white-space:nowrap}
+.hall-table .tiletimer{font-size:clamp(8px,.68vw,10px);line-height:1.15;white-space:nowrap;letter-spacing:-.035em}
+.hall-table .timer-due{color:#ae322c}.hall{aspect-ratio:1.32;min-height:430px}
+@media(max-width:1050px){.hall-table .tiletimer{font-size:10px}.hall-table strong{font-size:17px}}
+@media(max-width:700px){.shift-people{grid-template-columns:repeat(2,minmax(0,1fr))}.compact-metrics .metric{display:block}.compact-metrics .metric strong{display:block;margin-top:5px;font-size:18px}.hall-table .tiletimer{font-size:8px}.hall-table strong{font-size:14px}}
+.shift-layout{grid-template-columns:minmax(0,1.8fr) minmax(315px,1fr)}.right-stack{display:flex;flex-direction:column;gap:10px;min-width:0}.right-stack .box{margin:0;padding:12px}.right-stack h2{font-size:16px}.right-stack .sectionhead{margin-bottom:8px}.right-stack .compact-metrics{gap:5px;margin:0}.right-stack .compact-metrics .metric{padding:8px;display:block}.right-stack .compact-metrics .metric .muted{font-size:11px}.right-stack .compact-metrics .metric strong{font-size:16px}.right-stack .shift-people{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.right-stack .shift-people .actions{margin:0}.right-stack .shift-people .actions button{width:100%;padding:8px 5px;font-size:12px}.summary-row{display:flex;align-items:center;justify-content:space-between;gap:8px}.hall .vip-caption{position:absolute;left:8%;top:53%;font-size:12px;font-weight:700;pointer-events:none}.booking-item.finished{background:#f5f6f7;opacity:.75}.alert-row{padding:10px;border:1px solid #e5be8d;border-radius:8px;margin-top:8px;background:#fff8e9;font-size:12px}.alert-row .actions{justify-content:flex-start;margin-top:7px}.alert-row button{font-size:12px;padding:8px}.hall-table .tiletimer{font-size:9px}@media(max-width:1050px){.shift-layout{grid-template-columns:1fr}.right-stack{display:grid;grid-template-columns:1fr 1fr}.right-stack .bookings-panel,.right-stack .alerts-box{grid-column:1/-1}}@media(max-width:650px){.right-stack{display:flex}}
+.map-column{min-width:0}.map-column .box{margin-bottom:12px}.closed-list{display:grid;gap:8px;margin-top:12px}.closed-list .item{flex-wrap:wrap}.closed-list .item .actions{margin:0}.svg-wall{position:absolute;background:#fff;border:1px solid #444;pointer-events:none;z-index:0}.hall{aspect-ratio:1642/1242;min-height:0}.hall-table{z-index:2}.hall-label,.vip-caption{z-index:1}
+.hall-clean{background:#e8e8e6;overflow:hidden}.hall-clean .wall-outline{position:absolute;inset:2% 1% 1% 1%;border:3px solid #5d6265;border-left:0;border-bottom:0;pointer-events:none}.hall-clean .wall-divider{position:absolute;left:23%;top:2%;height:47%;border-left:3px solid #5d6265;pointer-events:none}.hall-clean .wall-entry{position:absolute;left:1%;top:49%;width:61%;border-top:3px solid #5d6265;pointer-events:none}.hall-table{z-index:3;box-shadow:0 2px 5px #0001}.shift-people input:disabled{background:#f3f4f5;color:#20282e;opacity:1;border-color:transparent}
+.right-stack .compact-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.right-stack .compact-metrics .metric{min-width:0}.right-stack .compact-metrics .metric strong{font-size:15px}
+.hall-exact{aspect-ratio:10/7!important;width:100%;height:auto;min-height:0!important;position:relative;border-radius:7px;overflow:hidden;background:#e9e9e6}.hall-exact .hall-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}.hall-exact .hall-lines line{stroke:#555;stroke-width:5;vector-effect:non-scaling-stroke;stroke-linecap:square}.hall-exact .hall-static-label{position:absolute;transform:translate(-50%,-50%);font-size:clamp(10px,1vw,16px);font-weight:700;z-index:1;pointer-events:none}.hall-exact .hall-table{position:absolute;z-index:2;overflow:hidden;border-radius:5px;padding:2px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px}.hall-exact .hall-table strong{font-size:clamp(12px,1.1vw,18px)}.hall-exact .hall-table small{font-size:clamp(7px,.7vw,10px)}.hall-exact .hall-table .tiletimer{font-size:clamp(7px,.65vw,10px)}@media(max-width:650px){.hall-exact .hall-table small{font-size:7px}}
+.hall-exact .hall-static-label.bar-new{writing-mode:vertical-rl;letter-spacing:.12em;left:97.6%!important;top:76.5%!important;font-size:11px;white-space:nowrap;z-index:1}.right-stack .metrics.compact-metrics{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:3px!important}.right-stack .compact-metrics .metric{padding:7px 4px!important;min-width:0;overflow:hidden}.right-stack .compact-metrics .metric .muted{font-size:9px;white-space:nowrap}.right-stack .compact-metrics .metric strong{font-size:12px!important;white-space:nowrap}@media(max-width:650px){.right-stack .compact-metrics .metric strong{font-size:11px!important}}
+.hall-exact .hall-static-label.vip-centered{font-size:clamp(15px,1.45vw,21px);font-weight:750;white-space:nowrap}.hall-exact .hall-static-label.bar-new{font-size:clamp(12px,1.08vw,16px);left:97.1%!important;top:76.5%!important;letter-spacing:.15em}.hall-exact .hall-lines line{stroke-linecap:square}
+.flavor-group{padding:12px 0;border-bottom:1px solid #e4e8e9}.flavor-group summary{font-weight:700;cursor:pointer}.flavor-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:10px}.flavor-item{padding:8px;border:1px solid #edf0f1;border-radius:7px;font-size:13px}.flavor-item[hidden],.flavor-group[hidden]{display:none!important}@media(max-width:700px){.flavor-items{grid-template-columns:1fr}}
+.header-meta{display:flex;align-items:center;gap:12px}.header-meta time{font-variant-numeric:tabular-nums;font-weight:750;font-size:19px}.flavor-dynamic-row{display:flex;align-items:end;gap:8px}.flavor-dynamic-row label{flex:1}.modal-card p{white-space:pre-line}@media(max-width:600px){.header-meta time{font-size:15px}}
+.clearable-field{position:relative;display:block;width:100%;min-width:0}.clearable-field>input,.clearable-field>textarea,.clearable-field>select{width:100%;padding-right:44px!important}.clearable-field.has-picker>input,.clearable-field.has-picker>select{padding-right:68px!important}.field-clear{position:absolute;right:5px;top:50%;transform:translateY(-50%);height:32px;width:32px;min-height:32px;display:flex;align-items:center;justify-content:center;border:none!important;border-radius:7px;background:transparent;color:#77818a;padding:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent;z-index:2;font-size:22px;line-height:1}.field-clear:active{background:#edf0f2;color:#1c252c}.clearable-field.has-picker>.field-clear{right:31px}.field-clear[hidden]{display:none!important}@media(hover:hover){.field-clear:hover{background:#edf0f2;color:#1c252c}}
+.field-clear[hidden]{display:flex!important}.clearable-field.has-catalog>input{padding-right:77px!important}.clearable-field.has-catalog>.field-clear{right:40px!important}.catalog-arrow{position:absolute;right:3px;top:50%;transform:translateY(-50%);height:34px;width:34px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;font-size:23px;color:#54636c;padding:0;touch-action:manipulation}.catalog-popup{position:fixed;z-index:4000;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:white;border:1px solid #ccd2d7;border-radius:10px;box-shadow:0 10px 28px #0003;padding:4px}.catalog-item{display:block;width:100%;text-align:left;border:0;border-radius:6px;padding:12px;color:#253038;background:white;font-size:14px;min-height:43px;white-space:normal}.catalog-item:active{background:#e9eff2}.catalog-empty{padding:14px;color:#71808a;font-size:13px}
+.wash-schedule-list{display:grid;gap:9px;max-height:55vh;overflow:auto}.wash-schedule-item{border:1px solid #e4e8eb;border-radius:9px;padding:10px}.wash-schedule-item strong{font-size:13px}.wash-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;margin-top:8px}.wash-days label{font-size:11px;display:flex;align-items:center;justify-content:center;gap:3px;flex-wrap:wrap}.wash-days input{width:17px;min-height:17px;height:17px;accent-color:#20282e}@media(max-width:560px){.wash-days{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.table-hookah-section{margin-top:18px;padding:13px;border-radius:12px}.table-hookah-section.current-hookahs{background:#f0f7f2;border:1px solid #cfe3d2}.table-hookah-section.completed-hookahs{background:#f5f5f5;border:1px solid #e0e2e3}.table-hookah-heading{display:flex;align-items:center;gap:9px;margin-bottom:12px}.table-hookah-heading h2{margin:0;font-size:17px}.table-hookah-count{font-size:12px;min-width:25px;text-align:center;border-radius:20px;padding:4px 7px;background:white;border:1px solid #d7ded9}.table-hookah-item{background:white;align-items:flex-start;flex-wrap:wrap}.table-hookah-details{flex:1;min-width:200px}.table-hookah-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px}.table-hookah-status{font-size:10px;font-weight:750;letter-spacing:.05em;padding:4px 7px;border-radius:5px}.table-hookah-status.is-current{background:#d9efdd;color:#196a36}.table-hookah-status.is-completed{background:#e8eaeb;color:#596168}.hookah-completed .table-hookah-details{opacity:.75}.table-hookah-actions{margin-top:0}
+.table-guest-buttons{display:flex;gap:7px;flex-wrap:wrap}.table-guest-buttons button{background:#f1f5f6;border-color:#cbd8df;color:#202a30;font-weight:600;padding:7px 11px;min-height:36px;touch-action:manipulation}
+input::placeholder,textarea::placeholder{color:#949ea6;opacity:1;font-weight:400}.clearable-field>input,.clearable-field>select,.clearable-field>textarea{min-height:42px}.clearable-field .field-clear,.clearable-field .catalog-arrow{top:50%!important;transform:translateY(-50%)!important;min-height:32px!important;height:32px!important;width:32px!important;display:flex;align-items:center;justify-content:center;line-height:1}.clearable-field.has-catalog>.field-clear{right:38px!important}.clearable-field.has-catalog>.catalog-arrow{right:3px!important}.clearable-field.has-picker:not(.has-catalog)>.field-clear{right:31px!important}.clearable-field.has-catalog>input{padding-right:80px!important}
+.guest-directory{display:grid;gap:7px;margin-top:14px}.guest-directory-row{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;min-height:60px;border:1px solid #e0e6e9;border-radius:10px;padding:10px 13px;background:#fff}.guest-directory-row:active{background:#f1f5f6}.guest-row-arrow{font-size:23px;color:#8c98a0}.guest-detail h3{font-size:15px;margin:22px 0 8px}.guest-detail p{line-height:1.5}.guest-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.guest-preferences{display:flex;flex-wrap:wrap;gap:6px}.guest-preferences span{padding:7px 10px;background:#f0f4f5;border-radius:8px;font-size:12px}
+.catalog-list{display:grid;gap:5px;margin:9px 0}.catalog-edit-row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;padding:6px 10px;background:#fff;border:1px solid #e5e8ea;border-radius:8px}.catalog-edit-row>.actions{margin:0;flex-wrap:nowrap}.catalog-edit-row .smallaction{padding:6px 8px}@media(max-width:560px){.catalog-edit-row{align-items:flex-start;flex-direction:column}.catalog-edit-row>.actions{width:100%;justify-content:flex-start}}
+.guest-order-brief{padding:9px 11px;border-radius:8px;background:#f2f6f7;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.guest-overlay{position:fixed;inset:0;z-index:5000;background:#111a22a8;display:flex;align-items:center;justify-content:center;padding:15px}.guest-overlay-panel{background:white;border-radius:15px;padding:18px;width:min(650px,100%);max-height:90vh;overflow-y:auto;box-shadow:0 15px 40px #0003}.guest-overlay-panel>.modal-head{display:flex;align-items:center;justify-content:space-between}.guest-overlay-close{font-size:21px;padding:5px 11px}.guest-picker-list{display:grid;gap:7px;margin-top:12px;max-height:55vh;overflow-y:auto}.guest-picker-row{display:flex;align-items:center;gap:7px;border:1px solid #e1e5e9;border-radius:9px;padding:5px}.guest-picker-row>button:first-child{border:0;flex:1;text-align:left;display:flex;align-items:flex-start;flex-direction:column;gap:3px;min-width:0}.guest-picker-row>.smallaction{flex-shrink:0}
+.guest-directory-info{min-width:0;flex:1}.guest-directory-facts{display:flex;flex-wrap:wrap;gap:3px 14px;margin-top:5px;color:#697680;font-size:12px}.guest-directory-comment{font-size:12px;color:#626f78;margin-top:5px;overflow-wrap:anywhere}.guest-directory-row{align-items:center;padding:12px 14px}.guest-directory-row strong{font-size:14px}
+.pill.sync-online{background:#edf8f1;color:#16633d;border-color:#bcdfc8}.pill.sync-pending{background:#fff8e8;color:#805512;border-color:#f0dda8}.pill.sync-error{background:#fff0ef;color:#a43832;border-color:#eebeba}.sync-warning{color:#9c3732;margin-right:9px}
+.birthday-fields{display:grid;grid-template-columns:minmax(75px,1fr) minmax(130px,2fr);gap:8px}.birthday-fields input,.birthday-fields select{min-width:0}
+.past-filter-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 180px;gap:10px;align-items:end;margin:16px 0}.past-check{display:flex;flex-direction:row;align-items:center;gap:7px;min-height:42px}.past-check input{width:18px;min-height:18px}.past-shift-rows{display:grid;gap:6px;margin-top:10px}.past-shift-row{display:block;text-align:left;padding:13px;width:100%;border:1px solid #e0e5e8;border-radius:10px;background:white}.past-shift-main,.past-shift-numbers{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}.past-shift-numbers{font-size:12px;color:#63717a;margin-top:6px}.past-flag,.past-alert{color:#925320;background:#fff7e9;border-radius:7px;padding:5px 8px;font-size:12px}.past-alert{padding:11px}.past-detail-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:16px 0}.past-metric{border:1px solid #e3e8eb;border-radius:9px;padding:10px;display:grid;gap:5px}.past-metric span,.past-metric small{color:#71808a;font-size:12px}.past-metric strong{font-size:19px}.past-shift-people{margin:14px 0}.past-orders{display:grid;gap:7px}.past-order{border:1px solid #e3e8eb;border-radius:9px;padding:12px}.past-order summary{display:flex;flex-wrap:wrap;align-items:center;gap:8px 15px;cursor:pointer}.past-order summary strong{min-width:135px}.past-order-content{border-top:1px solid #eef1f2;margin-top:10px;padding-top:8px;font-size:13px}.past-wash{padding:12px;border:1px solid #e3e8eb;border-radius:9px;margin-bottom:7px}@media(max-width:800px){.past-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:520px){.past-filter-grid{grid-template-columns:1fr}.past-detail-metrics{grid-template-columns:1fr}}
+</style><meta name="theme-color" content="#171d22"><link rel="icon" href="./icon.svg" type="image/svg+xml">
+</head>
+<body>
+<div class="shell"><aside class="side"><div class="logo">COCKTAIL ROOM<small>PWA · рабочая онлайн-версия</small></div>
+<nav><button class="active" data-tab="home">Обзор</button><button data-tab="shifts">Текущая смена</button><button data-tab="past">Прошлые смены</button><button data-tab="guests">Гости</button><button data-tab="lists">Списки</button><button data-tab="system">Система</button></nav>
+<div class="sidefoot">Только владелец · переход на общую базу<br>Офлайн-PWA ещё не готова</div></aside>
+<main><header><div><div class="sub">COCKTAIL ROOM / OWNER</div><h1 id="title">Обзор</h1></div><div class="header-meta"><time id="header-clock">--:--</time><span class="pill" id="server">Проверка…</span></div></header>
+<div class="notice">ОБЩАЯ СМЕНА: действия со столами, кальянами, бронями, VIP и мойкой отправляются в серверное состояние Google Sheets. Следи за индикатором синхронизации. Автономный запуск PWA и права сотрудников ещё в разработке.</div>
+<div id="content"></div></main></div><div id="modal-host"></div><div id="message" role="status"></div>
+<script src="./pwa-work-client.js"></script>
+<script>
+'use strict';
+const storageKey='cocktail-room-htmlservice-demo-v06';
+const pendingKey='cocktail-room-live-sync-pending-v1';
+let demoData=null,syncMode='loading',syncRevision=0,syncShiftId='',syncDirty=0,syncBusy=false,syncRetryTimer=null,syncError='',syncPendingGeneration=0;
+let lastServerOK=0,serverChecking=false,remoteRefreshAvailable=false,syncBaseState=null;
+const $=id=>document.getElementById(id);
+const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let tab='shifts',data,chosenTable=30,editOrderId=null,editBookingId=null,modalReturn='table',editWorkers=false,showSecondWorker=false;
+let REMOTE_GUESTS=[],remoteGuestsLoaded=false;
+let PAST_DATA=null,PAST_LOADING=false,PAST_LAST_ERROR='',PAST_FILTERS={month:'',worker:'',issues:false,search:''},PAST_VISIBLE=60;
+function load(){try{const x=JSON.parse(sessionStorage.getItem(storageKey)||'{}');data={shifts:Array.isArray(x.shifts)?x.shifts:[],hookahs:Array.isArray(x.hookahs)?x.hookahs:[],guests:Array.isArray(x.guests)?x.guests:[],tables:Array.isArray(x.tables)?x.tables:[],bookings:Array.isArray(x.bookings)?x.bookings:[],washings:Array.isArray(x.washings)?x.washings:[],vipHours:Array.isArray(x.vipHours)?x.vipHours:[]};}catch{data={shifts:[],hookahs:[],guests:[],tables:[],bookings:[],washings:[],vipHours:[]}}}
+function save(){
+ if(syncMode==='shared'||syncMode==='offline'||syncMode==='conflict'){
+  syncDirty++;
+  const pending={shiftId:syncShiftId,revision:syncRevision,state:data};
+  pending.baseState=syncBaseState;
+  try{sessionStorage.setItem(pendingKey,JSON.stringify(pending))}catch(e){syncError='Не удалось сохранить локальный резерв: '+e.message;syncMode='offline'}
+  if(syncMode==='shared')scheduleSync();
+  renderSyncStatus();
+ }else if(syncMode==='demo'){sessionStorage.setItem(storageKey,JSON.stringify(data))}
+}
+function renderSyncStatus(){
+ const pill=$('server'),el=$('live-sync-status');
+ let label='Проверка сервера…',cls='sync-pending';
+ if(syncMode==='conflict'||remoteRefreshAvailable){label='Конфликт изменений';cls='sync-error'}
+ else if(syncMode==='offline'||syncMode==='unavailable'||(typeof navigator!=='undefined'&&!navigator.onLine)){
+  label='Офлайн · '+(syncDirty?'Ожидает отправки':'Сервер недоступен');cls='sync-error';
+ }else if(syncBusy||syncDirty){label='Синхронизация…';cls='sync-pending'}
+ else if(syncMode==='shared'&&lastServerOK){label='Онлайн · Синхронизировано';cls='sync-online'}
+ else if(syncMode==='none'&&lastServerOK){label='Онлайн · Нет смены';cls='sync-online'}
+ else if(syncMode==='shared'){label='Проверка сервера…'}
+ if(pill){pill.textContent=label;pill.className='pill '+cls;pill.title=lastServerOK?'Последний ответ сервера: '+new Date(lastServerOK).toLocaleTimeString('ru-RU'):'Нет подтверждённого ответа сервера'}
+ if(!el)return;
+ if(syncMode==='conflict'||remoteRefreshAvailable){
+  el.innerHTML='<span class="sync-warning">На сервере есть другая версия смены. Локальные изменения не перезаписываются.</span>'+
+   '<button type="button" class="smallaction" id="sync-review">Проверить статус</button>';
+  $('sync-review').onclick=checkSharedHeartbeat;
+ }else if(syncMode==='offline'||syncMode==='unavailable'){
+  el.innerHTML='<span class="sync-warning">Нет подтверждённой связи с сервером. '+esc(syncError||'Изменения сохраняются локально, если смена уже загружена.')+'</span>'+
+   '<button type="button" class="smallaction" id="live-sync-retry">Повторить</button>';
+  $('live-sync-retry').onclick=retryLiveSync;
+ }else if(syncBusy||syncDirty){
+  el.textContent='Синхронизация… Изменения ещё не подтверждены сервером.';
+ }else if(syncMode==='shared')el.textContent='Сохранено в общей базе';
+ else el.textContent=label;
+}
+function checkSharedHeartbeat(){
+ if(serverChecking||syncBusy||syncMode==='loading')return;
+ if(typeof navigator!=='undefined'&&!navigator.onLine){
+  if(syncMode==='shared')syncMode='offline';
+  syncError='Устройство сообщает об отсутствии сети';renderSyncStatus();return;
+ }
+ serverChecking=true;
+ google.script.run.withSuccessHandler(res=>{
+  serverChecking=false;lastServerOK=Date.now();
+  if(!res||!res.ok){syncError='Нет ответа о состоянии смены';renderSyncStatus();return}
+  if(syncShiftId&&res.shift?.id&&syncShiftId!==res.shift.id){
+   syncMode='conflict';syncError='На сервере открыта другая смена';renderSyncStatus();return;
+  }
+  if(syncMode==='offline'){
+   syncMode='shared';
+   if(syncDirty)flushLiveSync();
+  }
+  if(syncMode==='shared'&&!syncDirty&&!syncBusy&&res.shift?.id===syncShiftId&&Number(res.revision)!==syncRevision){
+   remoteRefreshAvailable=true;
+   syncError='На другом устройстве изменили смену — нажми «Обновить с сервера» перед следующими действиями.';
+  }
+  renderSyncStatus();
+ }).withFailureHandler(err=>{
+  serverChecking=false;syncError=String(err.message||err);
+  if(syncMode==='shared')syncMode='offline';
+  renderSyncStatus();
+ }).crSyncGet();
+}
+function syncClone(v){return JSON.parse(JSON.stringify(v))}
+function syncThreeWay(base,local,remote){
+ const keys=['shifts','hookahs','tables','bookings','washings','vipHours'],out=syncClone(remote);
+ const eq=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+ for(const kind of keys){
+  if(!Array.isArray(base?.[kind])||!Array.isArray(local?.[kind])||!Array.isArray(remote?.[kind]))return null;
+  const b=new Map(base[kind].map(x=>[String(x.id),x])),l=new Map(local[kind].map(x=>[String(x.id),x])),r=new Map(remote[kind].map(x=>[String(x.id),x]));
+  const ids=new Set([...b.keys(),...l.keys(),...r.keys()]),merged=[];
+  for(const id of ids){
+   const old=b.get(id),mine=l.get(id),theirs=r.get(id);
+   if(!eq(mine,old)&&!eq(theirs,old)&&!eq(mine,theirs))return null;
+   const value=!eq(mine,old)?mine:theirs;
+   if(value!==undefined)merged.push(value);
+  }
+  out[kind]=merged;
+ }
+ return out;
+}
+function scheduleSync(){
+ if(syncRetryTimer)clearTimeout(syncRetryTimer);
+ syncRetryTimer=setTimeout(()=>{syncRetryTimer=null;flushLiveSync()},250);
+}
+function flushLiveSync(){
+ if(syncBusy||syncMode==='conflict'||!syncShiftId||!syncDirty)return;
+ if(syncMode!=='shared'&&syncMode!=='offline')return;
+ syncBusy=true;const generation=syncDirty,body=syncClone(data),baseRevision=syncRevision,baseState=syncBaseState?syncClone(syncBaseState):null;
+ renderSyncStatus();
+ google.script.run.withSuccessHandler(res=>{
+  syncBusy=false;
+  if(!res||!res.ok){
+   if(res&&res.conflict){syncMode='conflict';syncError='Версия на сервере '+res.serverRevision+', локальная '+baseRevision+'; несовместимых изменений: '+(res.conflicts?.length||0);}
+   else{syncMode='offline';syncError='Сервер не подтвердил сохранение'}
+   renderSyncStatus();return;
+  }
+  syncMode='shared';lastServerOK=Date.now();syncRevision=res.revision;
+  const confirmed=res.merged&&res.state?res.state:body;
+  syncBaseState=syncClone(confirmed);
+  if(syncDirty===generation){
+   data=syncClone(confirmed);
+   syncDirty=0;sessionStorage.removeItem(pendingKey);
+   if(res.merged&&tab==='shifts')paint();
+  }else{
+   const combined=syncThreeWay(body,data,confirmed);
+   if(!combined){
+    syncMode='conflict';syncError='Изменения во время синхронизации пересеклись с изменениями другого устройства';
+    renderSyncStatus();return;
+   }
+   data=combined;
+   sessionStorage.setItem(pendingKey,JSON.stringify({shiftId:syncShiftId,revision:syncRevision,state:data,baseState:syncBaseState}));
+   scheduleSync();
+  }
+  renderSyncStatus();
+ }).withFailureHandler(err=>{
+  syncBusy=false;syncMode='offline';syncError=String(err.message||err);
+  renderSyncStatus();
+ }).crSyncPut({shiftId:syncShiftId,revision:baseRevision,state:body,baseState});
+}
+function retryLiveSync(){
+ if(syncMode==='conflict')return toast('Конфликт нельзя перезаписать автоматически. Сначала сохрани локальную копию и сверь изменения.');
+ if(syncMode==='offline'){syncMode='shared';renderSyncStatus();flushLiveSync();}
+}
+function initLiveShift(){
+ if(syncDirty||syncBusy){toast('Сначала дождись синхронизации. Неотправленные изменения нельзя перезагрузить.');return}
+ syncMode='loading';
+ google.script.run.withSuccessHandler(res=>{
+  if(!res||!res.ok){syncMode='offline';syncError='Неверный ответ сервера';return paint()}
+  lastServerOK=Date.now();remoteRefreshAvailable=false;
+  syncShiftId=res.shift?.id||'';syncRevision=Number(res.revision)||0;syncBaseState=res.state?syncClone(res.state):null;
+  if(!res.shift){syncMode='none';data={shifts:[],hookahs:[],guests:[],tables:[],bookings:[],washings:[],vipHours:[]};paint();return}
+  let pending=null;
+  try{pending=JSON.parse(sessionStorage.getItem(pendingKey)||'null')}catch(e){}
+  if(pending&&pending.shiftId===syncShiftId){
+   data=pending.state;syncDirty=1;
+   if(pending.baseState)syncBaseState=pending.baseState;
+   if(pending.revision!==syncRevision){syncMode='conflict';syncError='На сервере изменился номер версии';}
+   else{syncMode='shared';scheduleSync();}
+  }else{data=res.state;syncMode='shared';syncDirty=0;}
+  paint();renderSyncStatus();
+ }).withFailureHandler(err=>{
+  let pending=null;try{pending=JSON.parse(sessionStorage.getItem(pendingKey)||'null')}catch(e){}
+  if(pending&&pending.shiftId&&pending.state){
+   syncMode='offline';syncShiftId=pending.shiftId;syncRevision=Number(pending.revision)||0;
+   data=pending.state;syncDirty=1;
+   syncBaseState=pending.baseState||null;
+  }else{syncMode='unavailable';data={shifts:[],hookahs:[],guests:[],tables:[],bookings:[],washings:[],vipHours:[]}}
+  syncError=String(err.message||err);paint();renderSyncStatus();
+ }).crSyncGet();
+}
+window.addEventListener('online',()=>{if(syncMode==='offline')retryLiveSync();checkSharedHeartbeat()});
+window.addEventListener('offline',()=>{if(syncMode==='shared')syncMode='offline';syncError='Интернет недоступен';renderSyncStatus()});
+window.addEventListener('focus',()=>{if(syncMode==='offline')retryLiveSync();checkSharedHeartbeat()});
+setInterval(()=>{if(document.visibilityState!=='hidden')checkSharedHeartbeat()},45000);
+
+function toast(m){const e=$('message');e.textContent=m;e.style.display='block';setTimeout(()=>e.style.display='none',2300)}
+function fmt(n){return Number(n||0).toLocaleString('ru-RU')}
+function displayDate(v){return /^\d{4}-\d{2}-\d{2}$/.test(String(v||''))?String(v).split('-').reverse().join('-'):String(v||'—')}
+function localDay(){const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')}
+function openShift(){return data.shifts.find(s=>s.status==='open')||null}
+function metric(label,value){return '<div class="metric"><div class="muted">'+esc(label)+'</div><strong>'+esc(value)+'</strong></div>'}
+
+// All timer deadlines are absolute timestamps; a table can have several active hookahs.
+function pad(n){return String(n).padStart(2,'0')}
+function clockNow(){const d=new Date();return pad(d.getHours())+':'+pad(d.getMinutes())}
+function timeFromInput(time, reference){
+ const base=reference?new Date(reference):new Date();
+ if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(time))return NaN;
+ const [h,m]=time.split(':').map(Number);base.setHours(h,m,0,0);
+ return base.getTime();
+}
+function hhmm(instant){const d=new Date(instant);return pad(d.getHours())+':'+pad(d.getMinutes())}
+function deadline(order,minutes){
+ const base=Number(order.packedAt||0);
+ return Number.isFinite(base)&&base>0?base+minutes*60000:0;
+}
+function countdown(ms){
+ const delta=Math.ceil((ms-Date.now())/1000);
+ const overdue=delta<0,abs=Math.abs(delta);
+ return (overdue?'+':'')+pad(Math.floor(abs/3600))+':'+pad(Math.floor(abs%3600/60))+':'+pad(abs%60);
+}
+function timerText(orders,type){
+ const candidates=orders.filter(o=>o.status!=='done'&&Number(o.packedAt)>0&&(type==='light'?!o.litDone:!o.coalDone&&!o.coalSkipped));
+ if(!candidates.length)return '';
+ const minutes=type==='light'?6:29;
+ const deadlines=candidates.map(o=>deadline(o,minutes));
+ // Nearest upcoming; if everything is overdue, take the least overdue.
+ const now=Date.now(),future=deadlines.filter(x=>x>=now);
+ const target=future.length?Math.min(...future):Math.max(...deadlines);
+ const seconds=Math.ceil(Math.abs(target-Date.now())/1000),elapsedMinutes=Math.floor(seconds/60),sec=seconds%60;
+ const compact=(elapsedMinutes>=60?Math.floor(elapsedMinutes/60)+':'+pad(elapsedMinutes%60)+':'+pad(sec):pad(elapsedMinutes)+':'+pad(sec));
+ return (type==='light'?'Р ':'У ')+(target<Date.now()?'+':'')+compact;
+}
+function refreshTileTimers(){
+ if(tab!=='shifts')return;
+ const active=openShift();if(!active)return;
+ document.querySelectorAll('[data-timer-table]').forEach(node=>{
+   const table=Number(node.dataset.timerTable);
+   const orders=allLiveOrders(active,table);
+   const light=node.querySelector('[data-kind="light"]'),coal=node.querySelector('[data-kind="coal"]');
+   if(light){const text=timerText(orders,'light');light.textContent=text;light.hidden=!text;light.classList.toggle('timer-due',text.includes('+'));}
+   if(coal){const text=timerText(orders,'coal');coal.textContent=text;coal.hidden=!text;coal.classList.toggle('timer-due',text.includes('+'));}
+ });
+}
+setInterval(()=>{refreshTileTimers();renderAlerts();},1000);
+
+const POSITIONS={
+40:[85.2705,125.7204,85,200],35:[243.3329,19.2341,80,170],36:[475.0897,18.1079,80,170],37:[684.7295,37.2523,85,85],38:[891.892,25.9909,80,170],39:[889.6398,242.117,85,85],30:[860.3602,377.4772,80,300],31:[614.0989,592.7477,170,80],32:[614.0989,433.6931,170,80],33:[503.1964,247.6125,80,170],34:[247.792,248.7386,80,170]
+};
+const WALLS=[[10,10,990,10],[990,10,990,690],[600,690,990,690],[10,10,10,430],[10,430,600,430],[230,10,230,430],[600,430,600,690]];
+function modal(content,large=false){
+ $('modal-host').innerHTML='<div class="modal-backdrop"><div class="modal-card '+(large?'large':'')+'" role="dialog" aria-modal="true">'+content+'</div></div>';
+ $('modal-host').querySelector('.modal-backdrop').onclick=e=>{if(e.target===e.currentTarget)closeModal()};
+ $('modal-host').querySelectorAll('[data-close-modal]').forEach(b=>b.onclick=closeModal);
+}
+function closeModal(){ $('modal-host').replaceChildren();editOrderId=null;editBookingId=null; }
+function currentTableSession(shift,n){return data.tables.find(t=>t.shiftId===shift.id&&Number(t.table)===n&&!t.closedAt)}
+function ordersOfVisit(shift,n,visit){if(!visit)return [];return data.hookahs.filter(o=>o.shiftId===shift.id&&Number(o.table)===n&&(o.tableSessionId?o.tableSessionId===visit.id:(Number(o.packedAt||0)>=Date.parse(visit.vipStartedAt||visit.openedAt)&&(!visit.closedAt||Number(o.packedAt||0)<=Date.parse(visit.closedAt)))))}
+function allLiveOrders(shift,n){return ordersOfVisit(shift,n,currentTableSession(shift,n)).filter(o=>o.status!=='done')}
+function hallMarkup(shift){
+ const wallSvg='<svg class="hall-lines" viewBox="0 0 1000 700" preserveAspectRatio="none" aria-hidden="true">'+
+ WALLS.map(w=>'<line x1="'+w[0]+'" y1="'+w[1]+'" x2="'+w[2]+'" y2="'+w[3]+'"/>').join('')+'</svg>';
+ const labels='<span class="hall-static-label" class="vip-centered" style="left:12.3%;top:16.4%">VIP</span>'+
+ '<span class="hall-static-label" style="left:39.99%;top:59.3%">ВХОД</span>'+
+ '<span class="hall-static-label bar-new" style="left:97.1%;top:76.5%">БАР</span>';
+ return '<div class="hall hall-exact">'+wallSvg+labels+
+ Array.from({length:11},(_,i)=>{
+  const n=i+30,p=POSITIONS[n],live=allLiveOrders(shift,n),occupied=!!currentTableSession(shift,n);
+  const booked=data.bookings.some(b=>b.day===shift.day&&Number(b.table)===n&&b.status!=='no_show');
+  return '<button class="hall-table '+(occupied?'occupied ':'')+(booked?'has-booking ':'')+'" data-hall-table="'+n+'" data-timer-table="'+n+'" style="left:'+p[0]/10+'%;top:'+p[1]/7+'%;width:'+p[2]/10+'%;height:'+p[3]/7+'%"><strong>'+n+'</strong><small>'+(live.length?live.length+' акт.':occupied?'Открыт':'Свободен')+'</small><span class="tiletimer" data-kind="light"></span><span class="tiletimer" data-kind="coal"></span></button>';
+ }).join('')+'</div>';
+}
+function hookahCompletedOnTable(shift,n,o,session){
+ if(o.status==='done')return true;
+ if(session&&o.tableSessionId===session.id)return false;
+ const closedVisits=data.tables.filter(v=>v.shiftId===shift.id&&Number(v.table)===n&&v.closedAt);
+ return closedVisits.some(v=>o.tableSessionId?o.tableSessionId===v.id:(Number(o.packedAt||0)>=Date.parse(v.openedAt)&&Number(o.packedAt||0)<=Date.parse(v.closedAt)));
+}
+function hookahTableRow(o,completed){
+ const status=completed?'ЗАКРЫТ':'АКТИВЕН';
+ return '<div class="item table-hookah-item '+(completed?'hookah-completed':'hookah-current')+'">'+
+ '<div class="table-hookah-details"><div class="table-hookah-top"><span class="table-hookah-status '+(completed?'is-completed':'is-current')+'">'+status+'</span><strong>'+esc(o.guest||'Гость')+'</strong></div>'+
+ '<div class="muted">'+esc((o.flavors||[o.flavor]).filter(Boolean).join(', ')||'Вкусы не заполнены')+'</div>'+
+ '<div class="muted">Забивка: '+(o.packedAt?hhmm(o.packedAt):'—')+' · Раскур: '+(o.packedAt?hhmm(deadline(o,6)):'—')+' · Угли: '+(o.packedAt?hhmm(deadline(o,36)):'—')+'</div>'+
+ '<div class="muted">'+fmt(o.price)+' ₸ · '+fmt(o.grams)+' г · '+(o.coalDone?'Угли заменены':o.coalSkipped?'Замена не потребовалась':o.coalPrepared?'Угли поставлены':'Угли не отмечены')+'</div></div>'+
+ '<div class="actions table-hookah-actions"><button class="smallaction" data-edit-order="'+esc(o.id)+'">Изменить</button>'+
+ (completed?'<button class="smallaction" data-order-open="'+esc(o.id)+'">Вернуть в активные</button>':'<button class="smallaction" data-toggle-coal="'+esc(o.id)+'">'+(o.coalDone?'Отменить замену':'Угли заменены')+'</button><button class="smallaction" data-order-close="'+esc(o.id)+'">Закрыть кальян</button>')+
+ '<button class="smallaction danger" data-delete-order="'+esc(o.id)+'">Удалить</button></div></div>';
+}
+function showTable(n){
+ const shift=openShift();if(!shift)return;
+ chosenTable=n;
+ const session=currentTableSession(shift,n),orders=data.hookahs.filter(o=>o.shiftId===shift.id&&Number(o.table)===n);
+ const active=orders.filter(o=>!hookahCompletedOnTable(shift,n,o,session));
+ const completed=orders.filter(o=>hookahCompletedOnTable(shift,n,o,session));
+ modal('<div class="modal-head"><h2>Стол '+n+'</h2><button class="modal-close" data-close-modal>×</button></div>'+
+ '<div class="muted">'+(session?'Открыт: '+new Date(session.openedAt).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}):'Стол закрыт')+'</div>'+
+ '<div class="actions" style="justify-content:flex-start"><button id="table-toggle" class="'+(session?'danger':'primary')+'">'+(session?'Закрыть стол':'Открыть стол')+'</button>'+
+ '<button class="primary" id="new-order" '+(!session?'disabled':'')+'>+ Кальян</button><button id="new-table-booking">+ Бронь</button></div>'+
+ (n===40?(vipPanel(session)+vipPastVisits(shift,session)):'')+
+ '<section class="table-hookah-section current-hookahs"><div class="table-hookah-heading"><h2>Активные кальяны</h2><span class="table-hookah-count">'+active.length+'</span></div>'+
+ '<div class="list">'+(active.map(o=>hookahTableRow(o,false)).join('')||'<div class="empty">На столе нет активных кальянов</div>')+'</div></section>'+
+ '<section class="table-hookah-section completed-hookahs"><div class="table-hookah-heading"><h2>Закрытые кальяны</h2><span class="table-hookah-count">'+completed.length+'</span></div>'+
+ '<div class="list">'+(completed.slice().sort((a,b)=>Number(b.completedAt||b.packedAt||0)-Number(a.completedAt||a.packedAt||0)).map(o=>hookahTableRow(o,true)).join('')||'<div class="empty">Закрытых кальянов пока нет</div>')+'</div></section>',true);
+ $('table-toggle').onclick=()=>{if(session){return appConfirm('Гости ушли? Закрыть стол и скрыть активные таймеры?',()=>{const visitOrders=ordersOfVisit(shift,n,session);visitOrders.forEach(o=>{if(!o.tableSessionId)o.tableSessionId=session.id});if(visitOrders.length===0&&n!==40){data.tables=data.tables.filter(t=>t.id!==session.id)}else session.closedAt=new Date().toISOString();save();paint();showTable(n)});}if(n===40){showVipOpenDialog(shift,n);return}data.tables.push({id:crypto.randomUUID(),shiftId:shift.id,table:n,openedAt:new Date().toISOString(),closedAt:null});save();paint();showTable(n)};
+ $('new-order').onclick=()=>{if(!currentTableSession(shift,n))return toast('Сначала открой стол');showOrder(null,n)};
+ if(n===40){wireVipActions(session,n);wireAllVipHours(n)}
+ $('new-table-booking').onclick=()=>showBooking(null,n);
+ document.querySelectorAll('[data-edit-order]').forEach(b=>b.onclick=()=>showOrder(b.dataset.editOrder,n));
+ document.querySelectorAll('[data-delete-order]').forEach(b=>b.onclick=()=>appConfirm('Удалить кальян?',()=>{data.hookahs=data.hookahs.filter(o=>o.id!==b.dataset.deleteOrder);save();paint();showTable(n)}));
+ document.querySelectorAll('[data-toggle-coal]').forEach(b=>b.onclick=()=>{const o=data.hookahs.find(x=>x.id===b.dataset.toggleCoal);if(o){o.coalDone=!o.coalDone;o.coalSkipped=false;save();paint();showTable(n)}});
+ document.querySelectorAll('[data-order-close]').forEach(b=>b.onclick=()=>appConfirm('Закрыть этот кальян? Он останется в истории стола.',()=>{const o=data.hookahs.find(x=>x.id===b.dataset.orderClose);if(!o)return;o.status='done';o.completedAt=new Date().toISOString();save();paint();showTable(n)}));
+ document.querySelectorAll('[data-order-open]').forEach(b=>b.onclick=()=>{
+  const o=data.hookahs.find(x=>x.id===b.dataset.orderOpen);if(!o)return;
+  if(!session||o.tableSessionId&&o.tableSessionId!==session.id||data.tables.some(v=>v.shiftId===shift.id&&Number(v.table)===n&&v.closedAt&&Number(o.packedAt||0)>=Date.parse(v.openedAt)&&Number(o.packedAt||0)<=Date.parse(v.closedAt)))return toast('Кальян из прошлого посещения нельзя вернуть в активные на новом столе');
+  o.status='active';delete o.completedAt;o.tableSessionId=session.id;save();paint();showTable(n);
+ });
+}
+
+let LIST_CATALOG={flavors:[],bowls:[],hookahs:[],cooling:[],prices:[]};
+let flavorCatalogLoaded=false;
+const BRAND_LABELS={BB:'BB',CH:'CH',DEUS:'DEUS',DS:'DS',MH:'MH',OD:'OD',S:'S',TN:'TN'};
+function flavorOptions(){return '<datalist id="flavor-catalog">'+LIST_CATALOG.flavors.filter(x=>x.active).map(x=>'<option value="'+esc(x.brand+' '+x.name)+'"></option>').join('')+'</datalist>'}
+function listOptions(kind,id){return '<datalist id="'+id+'">'+(LIST_CATALOG[kind]||[]).filter(x=>x.active).map(x=>'<option value="'+esc(kind==='prices'?String(x.amount):x.name)+'"></option>').join('')+'</datalist>'}
+function loadFlavorCatalog(){
+ google.script.run.withSuccessHandler(rows=>{LIST_CATALOG=rows||LIST_CATALOG;flavorCatalogLoaded=true;if(tab==='lists')paint()}).withFailureHandler(e=>{flavorCatalogLoaded=false;toast('Не удалось загрузить списки: '+(e.message||e))}).crGetLists();
+}
+function catalogEditRow(kind,item){
+ return '<div class="catalog-edit-row"><span>'+esc(kind==='flavors'?item.name:kind==='prices'?fmt(item.amount)+' ₸':item.name)+'</span>'+
+ '<div class="actions"><button type="button" class="smallaction" data-edit-list="'+esc(kind)+'" data-list-id="'+esc(item.id)+'">Изменить</button>'+
+ '<button type="button" class="smallaction" data-toggle-list="'+esc(kind)+'" data-list-id="'+esc(item.id)+'">'+(item.active?'В архив':'Восстановить')+'</button></div></div>';
+}
+function showListEditor(kind,id){
+ const item=id?(LIST_CATALOG[kind]||[]).find(x=>x.id===id):null,labels={flavors:'Вкус',bowls:'Чаша',hookahs:'Кальян',cooling:'Холодок',prices:'Цена'};
+ if(!labels[kind]||id&&!item)return toast('Позиция не найдена');
+ modal('<div class="modal-head"><h2>'+(item?'Изменить':'Добавить')+' · '+labels[kind]+'</h2><button class="modal-close" data-close-modal>×</button></div>'+
+ '<form id="list-edit-form"><div class="formgrid">'+
+ (kind==='flavors'?'<label>Бренд<input name="brand" maxlength="120" required placeholder="Название бренда" list="known-brands"></label><datalist id="known-brands">'+[...new Set((LIST_CATALOG.flavors||[]).map(x=>x.brand))].sort().map(x=>'<option value="'+esc(x)+'"></option>').join('')+'</datalist>':'')+
+ '<label>'+(kind==='prices'?'Название цены':'Название')+'<input name="name" required maxlength="120" placeholder="Введите название"></label>'+
+ (kind==='prices'?'<label>Сумма, ₸<input name="amount" type="number" min="0" max="1000000" step="1" required></label>':'')+
+ '</div><div class="actions"><button type="button" data-close-modal>Отмена</button><button id="list-edit-save" class="primary">Сохранить</button></div></form>');
+ const form=$('list-edit-form');
+ if(item){form.elements.name.value=item.name;if(kind==='flavors')form.elements.brand.value=item.brand;if(kind==='prices')form.elements.amount.value=item.amount}
+ form.onsubmit=e=>{
+  e.preventDefault();const fd=new FormData(form),record={id:item?.id||'',name:String(fd.get('name')||'').trim()};
+  if(kind==='flavors')record.brand=String(fd.get('brand')||'');
+  if(kind==='prices')record.amount=Number(fd.get('amount'));
+  const btn=$('list-edit-save');btn.disabled=true;btn.textContent='Сохраняем…';
+  google.script.run.withSuccessHandler(res=>{
+   const refresh=()=>google.script.run.withSuccessHandler(all=>{
+    LIST_CATALOG=all||LIST_CATALOG;flavorCatalogLoaded=true;paint();closeModal();toast('Список сохранён');
+   }).withFailureHandler(err=>{btn.disabled=false;toast('Ошибка обновления списка: '+(err.message||err))}).crGetLists();
+   refresh();
+  }).withFailureHandler(err=>{btn.disabled=false;btn.textContent='Сохранить';toast('Ошибка: '+(err.message||err))}).crListsSave(kind,record);
+ };
+}
+function loadHistoricalGuestCard(guestId,node){
+ if(!node)return;
+ node.innerHTML='<h3>История посещений</h3><p class="muted">Загружаем…</p>';
+ google.script.run.withSuccessHandler(res=>{
+  if(!node.isConnected)return;
+  if(!res||!res.ok){node.textContent='История пока недоступна';return}
+  node.innerHTML='<h3>История посещений</h3>'+
+   '<div class="guest-detail-grid"><div><strong>Кальянов в истории</strong><p>'+fmt(res.total)+'</p></div>'+
+   '<div><strong>Сумма кальянов</strong><p>'+fmt(res.revenue)+' ₸</p></div></div>'+
+   '<h3>Часто заказываемые вкусы</h3>'+
+   (res.favorites.length?'<div class="guest-preferences">'+res.favorites.map(f=>'<span>'+esc(f.name)+' · '+f.count+'</span>').join('')+'</div>':
+   '<p class="muted">Пока нет данных о предпочитаемых вкусах.</p>')+
+   '<h3>Последние кальяны</h3>'+
+   (res.visits.length?'<div class="list">'+res.visits.slice(0,15).map(v=>
+     '<div class="item"><div><strong>'+esc(displayDate(v.date))+' · стол '+esc(v.table||'—')+'</strong>'+
+     '<div class="muted">'+esc(v.flavors.join(', ')||'Вкусы не указаны')+' · '+fmt(v.price)+' ₸ · '+esc(v.grams||'—')+' г</div></div></div>').join('')+'</div>':
+   '<p class="muted">Пока нет привязанных посещений. История появится после сопоставления гостя.</p>');
+ }).withFailureHandler(err=>{if(node.isConnected)node.textContent='История недоступна: '+String(err.message||err)}).crGetHistoricalGuestVisits(guestId);
+}
+function showGuestOverlay(g){
+ const backdrop=document.createElement('div');backdrop.className='guest-overlay';
+ backdrop.innerHTML='<div class="guest-overlay-panel" role="dialog" aria-modal="true"><div class="modal-head"><h2>Гость · '+esc(g.name)+'</h2><button type="button" class="guest-overlay-close">×</button></div>'+
+ '<div class="guest-detail">'+guestCardHtml(g)+'</div><div class="historical-guest-card"></div><div class="actions"><button type="button" class="guest-overlay-done">Закрыть</button></div></div>';
+ document.body.append(backdrop);
+ loadHistoricalGuestCard(g.id,backdrop.querySelector('.historical-guest-card'));
+ backdrop.querySelector('.guest-overlay-close').onclick=()=>backdrop.remove();
+ backdrop.querySelector('.guest-overlay-done').onclick=()=>backdrop.remove();
+ backdrop.addEventListener('click',e=>{if(e.target===backdrop)backdrop.remove()});
+}
+function openOrderGuestPicker(field,update){
+ if(!remoteGuestsLoaded)return toast('Дождись загрузки базы гостей');
+ const backdrop=document.createElement('div');backdrop.className='guest-overlay';
+ backdrop.innerHTML='<div class="guest-overlay-panel" role="dialog" aria-modal="true"><div class="modal-head"><h2>Выбрать гостя</h2><button type="button" class="guest-overlay-close">×</button></div>'+
+ '<label>Поиск по имени или телефону<input id="guest-pick-search" placeholder="Начни вводить имя или телефон" autocomplete="off"></label>'+
+ '<div class="muted">Гости отсортированы по алфавиту</div><div class="guest-picker-list"></div></div>';
+ document.body.append(backdrop);
+ const search=backdrop.querySelector('#guest-pick-search'),result=backdrop.querySelector('.guest-picker-list');
+ const close=()=>backdrop.remove();
+ backdrop.querySelector('.guest-overlay-close').onclick=close;
+ backdrop.addEventListener('click',e=>{if(e.target===backdrop)close()});
+ function draw(){
+  const q=search.value.trim().toLocaleLowerCase('ru'),digits=q.replace(/\D/g,'');
+  const rows=REMOTE_GUESTS.filter(g=>!q||g.name.toLocaleLowerCase('ru').includes(q)||(digits.length>2&&String(g.phone||'').replace(/\D/g,'').includes(digits)))
+   .sort((a,b)=>a.name.localeCompare(b.name,'ru')).slice(0,60);
+  result.innerHTML=rows.map(g=>'<div class="guest-picker-row"><button type="button" data-pick="'+esc(g.id)+'"><strong>'+esc(g.name)+'</strong><span class="muted">'+esc(g.phone||'Без телефона')+' · '+esc(g.category||'Без категории')+'</span></button>'+
+   '<button type="button" class="smallaction" data-info="'+esc(g.id)+'">Инфо</button></div>').join('')||'<div class="empty">Не найдено</div>';
+  result.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{
+   const g=REMOTE_GUESTS.find(x=>x.id===b.dataset.pick);if(!g)return;
+   field.value=g.name;field.dispatchEvent(new Event('input',{bubbles:true}));update();close();
+  });
+  result.querySelectorAll('[data-info]').forEach(b=>b.onclick=()=>{
+   const g=REMOTE_GUESTS.find(x=>x.id===b.dataset.info);if(g)showGuestOverlay(g);
+  });
+ }
+ search.addEventListener('input',draw);draw();search.focus();
+}
+function guestRecentOrders(g){
+ const key=String(g.name||'').trim().toLocaleLowerCase('ru');
+ return data.hookahs.filter(o=>o.guestId===g.id||(!o.guestId&&String(o.guest||'').trim().toLocaleLowerCase('ru')===key))
+ .slice().sort((a,b)=>Number(b.packedAt||0)-Number(a.packedAt||0));
+}
+function guestDateText(raw){
+ if(!raw)return '—';
+ const value=String(raw).trim();
+ const m=value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+ if(m)return m[3]+'.'+m[2]+'.'+m[1];
+ const parsed=new Date(value);
+ return Number.isFinite(parsed.getTime())?parsed.toLocaleDateString('ru-RU'):value;
+}
+function guestBirthdayParts(value){
+ const raw=String(value||'').trim(),match=raw.match(/^(?:\d{4}-)?(\d{2})-(\d{2})$/);
+ if(!match)return {month:'',day:''};
+ return {month:match[1],day:match[2]};
+}
+function guestBirthdayText(value){
+ const b=guestBirthdayParts(value),month=Number(b.month),day=Number(b.day);
+ if(!day||month<1||month>12)return 'Не указана';
+ return day+' '+['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'] [month-1];
+}
+function guestCardHtml(g,short=false){
+ const lines='<p><strong>'+esc(g.name)+'</strong></p>'+
+ '<p class="muted">'+esc(g.phone||'Без телефона')+' · '+esc(g.category||'Без категории')+'</p>'+
+ (g.comment?'<p>'+esc(g.comment)+'</p>':'');
+ if(short)return lines;
+ return lines+'<div class="guest-detail-grid"><div><strong>Дата рождения</strong><p>'+esc(guestBirthdayText(g.birthday))+'</p></div>'+
+ '<div><strong>Источник</strong><p>'+esc(g.source||'Не указан')+'</p></div>'+
+ '<div><strong>Добавлен</strong><p>'+esc(guestDateText(g.createdAt))+'</p></div></div>';
+}
+function showGuestCard(id){
+ const g=REMOTE_GUESTS.find(x=>x.id===id);if(!g)return toast('Гость не найден');
+ modal('<div class="modal-head"><h2>Карточка гостя</h2><button class="modal-close" data-close-modal>×</button></div>'+
+ '<div class="guest-detail">'+guestCardHtml(g)+'</div><div id="historical-guest-card"></div>'+
+ '<div class="actions"><button type="button" data-close-modal>Закрыть</button><button type="button" class="primary" id="guest-edit">Редактировать</button></div>',true);
+ loadHistoricalGuestCard(g.id,$('historical-guest-card'));
+ $('guest-edit').onclick=()=>showGuestEditor(g.id);
+}
+function setupGuestPhoneInput(input){
+ // Stable +7 prefix. Never auto-insert missing phone digits.
+ const onFocus=()=>{if(!input.value)input.value='+7 '};
+ input.addEventListener('focus',onFocus);
+ input.addEventListener('input',()=>{
+  const text=input.value, digits=text.replace(/\D/g,'');
+  if(!text||text==='+')return;
+  // Format conventional Kazakhstan numbers, leave unusual numbers intact for confirmation.
+  if(/^\+?7[\d\s()-]*$/.test(text)||/^8\d{10}$/.test(digits)){
+   input.value=formatKzPhone(text)||'+7 ';
+  }
+ });
+ if(!input.value)input.value='+7 ';
+}
+function showGuestEditor(id){
+ const g=id?REMOTE_GUESTS.find(x=>x.id===id):null;if(id&&!g)return toast('Гость не найден');
+ modal('<div class="modal-head"><h2>'+(g?'Редактировать гостя':'Новый гость')+'</h2><button class="modal-close" data-close-modal>×</button></div>'+
+ '<form id="guest-edit-form"><div class="formgrid">'+
+ '<label>Имя<input name="name" required maxlength="90" placeholder="Имя гостя"></label>'+
+ '<label>Телефон<input name="phone" type="tel" maxlength="40" inputmode="tel" placeholder="+7 000 000 00 00"></label>'+
+ '<label>Категория<select name="category"><option value="">Без категории</option>'+['Гость','Новый гость','Постоянщик','Редкий гость','Конфликтный'].map(x=>'<option>'+x+'</option>').join('')+'</select></label>'+
+ '<label>Дата рождения (без года)<div class="birthday-fields">'+
+ '<input name="birthday_day" type="number" inputmode="numeric" min="1" max="31" placeholder="День">'+
+ '<select name="birthday_month"><option value="">Месяц</option>'+['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'].map((month,i)=>'<option value="'+String(i+1).padStart(2,'0')+'">'+month+'</option>').join('')+'</select></div></label>'+
+ '<label>Источник<input name="source" maxlength="150" placeholder="Откуда узнал"></label>'+
+ '<label class="wide">Комментарий<textarea name="comment" maxlength="2000" rows="3" placeholder="Комментарий"></textarea></label></div>'+
+ '<div class="actions"><button type="button" data-close-modal>Отмена</button><button type="submit" class="primary" id="guest-edit-save">Сохранить</button></div></form>',true);
+ const form=$('guest-edit-form');if(g){for(const field of ['name','phone','category','source','comment'])if(form.elements[field])form.elements[field].value=g[field]||'';
+ const birthday=guestBirthdayParts(g.birthday);form.elements.birthday_day.value=birthday.day?Number(birthday.day):'';
+ form.elements.birthday_month.value=birthday.month;}
+ setupGuestPhoneInput(form.elements.phone);
+ form.onsubmit=e=>{
+  e.preventDefault();const dataForm=new FormData(form),rawPhone=String(dataForm.get('phone')||'').trim(),phone=rawPhone==='+7'?'':rawPhone;
+  if(phone&&!validKzPhone(phone)&&!form.dataset.phoneOverride){
+   return appConfirm('Номер отличается от формата +7 000 000 00 00. Сохранить его как введён?',()=>{
+    form.dataset.phoneOverride='yes';form.requestSubmit();
+   });
+  }
+  form.dataset.phoneOverride='';
+  const birthdayDay=String(dataForm.get('birthday_day')||'').trim(),birthdayMonth=String(dataForm.get('birthday_month')||'').trim();
+  if(Boolean(birthdayDay)!==Boolean(birthdayMonth))return toast('Для дня рождения выбери и день, и месяц');
+  const birthday=birthdayDay&&birthdayMonth?birthdayMonth+'-'+birthdayDay.padStart(2,'0'):'';
+  if(birthday){
+   const d=Number(birthdayDay),m=Number(birthdayMonth),days=[31,29,31,30,31,30,31,31,30,31,30,31];
+   if(!Number.isInteger(d)||m<1||m>12||d<1||d>days[m-1])return toast('Укажи существующую дату рождения');
+  }
+  const entry={id:g?.id||'',name:String(dataForm.get('name')||'').trim(),phone,category:dataForm.get('category'),birthday,source:dataForm.get('source'),comment:dataForm.get('comment')};
+  const btn=$('guest-edit-save');btn.disabled=true;btn.textContent='Сохранение…';
+  google.script.run.withSuccessHandler(res=>{
+   btn.disabled=false;btn.textContent='Сохранить';
+   if(res.duplicate)return appConfirm('Совпадение по '+(res.reason==='phone'?'телефону':'имени')+'. Открыть существующего гостя?',()=>showGuestCard(res.guest.id));
+   if(!res.ok)return toast('Не удалось сохранить');
+   const index=REMOTE_GUESTS.findIndex(x=>x.id===res.guest.id);if(index>=0)REMOTE_GUESTS[index]=res.guest;else REMOTE_GUESTS.push(res.guest);
+   toast('Карточка сохранена');if(tab==='guests')paint();showGuestCard(res.guest.id);
+  }).withFailureHandler(err=>{btn.disabled=false;btn.textContent='Сохранить';toast('Ошибка: '+(err.message||err))}).crSaveGuest(entry);
+ };
+}
+function guestOptions(){
+ const joined=[...REMOTE_GUESTS,...data.guests].sort((a,b)=>String(a.name).localeCompare(String(b.name),'ru'));const unique=new Set();
+ return '<datalist id="known-guests">'+joined.filter(g=>{const k=g.name.trim().toLocaleLowerCase('ru');if(unique.has(k))return false;unique.add(k);return true}).map(g=>'<option value="'+esc(g.name)+'"></option>').join('')+'</datalist>';
+}
+function ensureGuest(name){const clean=String(name||'').trim();if(!clean)return null;const existing=resolveGuest(clean);if(existing)return existing;if(syncMode!=='demo')return null;const id=crypto.randomUUID();data.guests.push({id,name:clean,category:'Гость',createdAt:new Date().toISOString()});return id}
+function resolveGuest(name){
+ const found=[...REMOTE_GUESTS,...data.guests].find(g=>String(g.name).trim().toLocaleLowerCase('ru')===String(name).trim().toLocaleLowerCase('ru'));
+ return found?found.id:null;
+}
+function loadRemoteGuests(){
+ google.script.run.withSuccessHandler(rows=>{REMOTE_GUESTS=Array.isArray(rows)?rows:[];remoteGuestsLoaded=true;if(tab==='guests')paint()}).withFailureHandler(err=>toast('Ошибка загрузки базы гостей: '+(err.message||err))).crGetGuests();
+}
+function guestHistory(name,id){
+ const normalized=String(name||'').trim().toLowerCase();
+ const orders=data.hookahs.filter(o=>(id&&o.guestId===id)||(!o.guestId&&normalized&&String(o.guest||'').trim().toLowerCase()===normalized));
+ if(!orders.length)return '<div class="muted">Предыдущих кальянов нет</div>';
+ const favorites=new Map();
+ orders.forEach(o=>(o.flavors||[o.flavor]).filter(Boolean).forEach(f=>favorites.set(f,(favorites.get(f)||0)+1)));
+ const top=[...favorites].sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>x[0]);
+ return '<div class="muted">Ранее кальянов: '+orders.length+' · Чаще выбирает: '+esc(top.join(', ')||'—')+'</div>';
+}
+
+function showOrder(id,table){
+ const shift=openShift();if(!shift)return;
+ const item=data.hookahs.find(o=>o.id===id&&o.shiftId===shift.id);
+ modal('<div class="modal-head"><h2>'+(item?'Изменить кальян':'Новый кальян')+' · стол '+table+'</h2><button class="modal-close" data-close-modal>×</button></div>'+
+ '<form id="dialog-order"><div class="formgrid">'+
+ '<label>Стол<select name="table">'+Array.from({length:11},(_,i)=>'<option>'+(i+30)+'</option>').join('')+'</select></label>'+
+ '<label>Имя гостя<input name="guest" data-catalog="guests" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="90" placeholder="Введите или выберите гостя"></label>'+
+ '<div class="wide"><div class="actions" style="justify-content:flex-start;margin-top:0"><button type="button" class="smallaction" id="order-guest-pick">Выбрать из базы</button><button type="button" class="smallaction" id="order-guest-detail" hidden>Карточка гостя</button></div></div>'+
+ '<div class="wide" id="table-guest-suggestions"></div><div class="wide" id="guest-history"></div>'+
+ '<div class="wide" id="order-flavors"><label>Вкус 1<input name="flavor0" data-catalog="flavors" maxlength="90" placeholder="Выберите вкус"></label></div><div class="wide"><button type="button" id="add-order-flavor">+ Добавить вкус</button></div>'+
+ flavorOptions()+'<label>Холодок<input name="cooling" data-catalog="cooling" maxlength="90" placeholder="Выберите холодок"></label><label>Чаша<input name="bowl" data-catalog="bowls" maxlength="90" placeholder="Выберите чашу"></label>'+
+ '<label>Кальян<input name="hookah" data-catalog="hookahs" maxlength="90" placeholder="Выберите кальян"></label>'+listOptions('cooling','cooling-list')+listOptions('bowls','bowls-list')+listOptions('hookahs','hookahs-list')+listOptions('prices','prices-list')+'<label>Табак, г<input name="grams" type="number" min="0" step=".1" placeholder="Укажите граммы"></label>'+
+ '<label>Цена, ₸<input name="price" data-catalog="prices" type="number" min="0" max="1000000" placeholder="Выберите цену"></label>'+
+ '<label>Время забивки<input name="packedTime" type="time"></label>'+
+ '<label>Раскур (+6 мин)<input name="litTime" readonly></label>'+
+ '<label>Замена углей (+30 мин)<input name="coalTime" readonly></label>'+
+ '<label class="checkline"><input name="iiko" type="checkbox"> Бегунок iiko</label>'+
+ '<label class="checkline"><input name="litDone" type="checkbox"> Раскурен / отдан</label><label class="checkline"><input name="coalPrepared" type="checkbox"> Угли поставлены</label><label class="checkline"><input name="coalDone" type="checkbox"> Угли заменены</label><label class="checkline"><input name="coalSkipped" type="checkbox"> Замена не потребовалась</label>'+
+ '<label class="wide">Комментарий<input name="comment" maxlength="350" placeholder="Комментарий (необязательно)"></label></div>'+
+ '<div class="actions"><button type="button" data-close-modal>Отмена</button><button class="primary" type="submit">Сохранить кальян</button></div></form>',true);
+ const f=$('dialog-order');f.elements.table.value=item?.table??table;f.elements.guest.value=item?.guest||'';
+ let flavorCount=1;const wrap=$('order-flavors'),add=$('add-order-flavor');function addField(value=''){if(flavorCount===5)return;const i=flavorCount++,el=document.createElement('div');el.className='flavor-dynamic-row';el.innerHTML='<label>Вкус '+(i+1)+'<input name="flavor'+i+'" data-catalog="flavors" maxlength="90" placeholder="Выберите вкус"></label><button type="button" class="danger">Удалить</button>';el.querySelector('input').value=value;el.querySelector('button').onclick=()=>{el.remove();flavorCount=1;wrap.querySelectorAll('.flavor-dynamic-row').forEach(row=>{row.querySelector('input').name='flavor'+flavorCount;row.querySelector('label').firstChild.textContent='Вкус '+(flavorCount+1);flavorCount++});add.disabled=flavorCount===5};wrap.append(el);add.disabled=flavorCount===5}add.onclick=()=>addField();(item?.flavors||[item?.flavor]).filter(Boolean).slice(0,5).forEach((v,i)=>{if(!i)f.elements.flavor0.value=v;else addField(v)});
+ ['cooling','bowl','hookah','grams','price','comment'].forEach(k=>{if(item&&item[k]!==undefined)f.elements[k].value=item[k]});
+ f.elements.packedTime.value=item?(item.packedAt?hhmm(item.packedAt):''):clockNow();
+ function updateTableGuestSuggestions(){
+  const current=currentTableSession(shift,Number(f.elements.table.value));
+  const names=current?ordersOfVisit(shift,Number(f.elements.table.value),current)
+   .filter(o=>o.status!=='done').map(o=>String(o.guest||'').trim()).filter(Boolean):[];
+  const unique=[...new Map(names.map(n=>[n.toLocaleLowerCase('ru'),n])).values()];
+  const target=$('table-guest-suggestions');
+  target.innerHTML=unique.length?'<div class="muted" style="margin-bottom:6px">Гости активных кальянов на этом столе:</div><div class="table-guest-buttons">'+unique.map((n,i)=>'<button type="button" class="smallaction" data-table-guest="'+i+'">'+esc(n)+'</button>').join('')+'</div>':'';
+  target.querySelectorAll('[data-table-guest]').forEach(btn=>btn.onclick=()=>{
+   f.elements.guest.value=unique[Number(btn.dataset.tableGuest)];
+   f.elements.guest.dispatchEvent(new Event('input',{bubbles:true}));
+  });
+ }
+ f.elements.table.addEventListener('change',updateTableGuestSuggestions);
+ updateTableGuestSuggestions();
+ const updateGuest=()=>{
+  const name=f.elements.guest.value.trim(),record=REMOTE_GUESTS.find(x=>x.name.toLocaleLowerCase('ru')===name.toLocaleLowerCase('ru'));
+  $('order-guest-detail').hidden=!record;
+  $('guest-history').innerHTML=record?'<div class="guest-order-brief"><strong>'+esc(record.name)+'</strong><span class="muted">'+esc(record.phone||'Без телефона')+' · '+esc(record.category||'Без категории')+'</span></div>':guestHistory(name,resolveGuest(name));
+ };
+ $('order-guest-pick').onclick=()=>openOrderGuestPicker(f.elements.guest,updateGuest);
+ $('order-guest-detail').onclick=()=>{const g=REMOTE_GUESTS.find(x=>x.name.toLocaleLowerCase('ru')===f.elements.guest.value.trim().toLocaleLowerCase('ru'));if(g)showGuestOverlay(g)};
+ f.elements.guest.addEventListener('input',updateGuest);updateGuest();
+ f.elements.iiko.checked=!!item?.iiko;f.elements.litDone.checked=!!item?.litDone;f.elements.coalPrepared.checked=!!item?.coalPrepared;f.elements.coalDone.checked=!!item?.coalDone;f.elements.coalSkipped.checked=!!item?.coalSkipped;
+ const refresh=()=>{const t=f.elements.packedTime.value?timeFromInput(f.elements.packedTime.value,item?.packedAt):NaN;f.elements.litTime.value=Number.isFinite(t)?hhmm(t+360000):'';f.elements.coalTime.value=Number.isFinite(t)?hhmm(t+2160000):''};
+ f.elements.packedTime.onchange=refresh;f.elements.packedTime.addEventListener('input',refresh);refresh();
+ f.onsubmit=e=>{e.preventDefault();const form=new FormData(f),flavors=Array.from({length:5},(_,i)=>String(form.get('flavor'+i)||'').trim()).filter(Boolean);
+ const packedAt=timeFromInput(String(form.get('packedTime')),item?.packedAt);
+ const gramsText=String(form.get('grams')||'').trim();
+ const grams=gramsText===''?null:Number(gramsText);
+ if(grams!==null&&(!Number.isFinite(grams)||grams<=0))return toast('Укажите корректную граммовку');
+ const packedText=String(form.get('packedTime')||'').trim();
+ if(packedText&&!Number.isFinite(packedAt))return toast('Проверь время забивки');
+ const priceText=String(form.get('price')||'').trim();
+ const price=priceText===''?null:Number(priceText);
+ if(price!==null&&(!Number.isFinite(price)||price<0))return toast('Укажите корректную цену');
+ const tableNumber=Number(form.get('table'));
+ if(!Number.isInteger(tableNumber)||tableNumber<30||tableNumber>40)return toast('Выберите стол');
+ let warning=grams!==null&&(grams<14||grams>28)?'Граммовка '+grams+' г вне диапазона 14–28 г. Всё равно сохранить?':'';
+ if(price===3000)warning+=(warning?'\n\n':'')+'Вы отбиваете стафф-кальян за 3 000 ₸, всё верно?';
+ if(price===4000){
+  const visit=currentTableSession(shift,tableNumber);
+  const related=data.hookahs.filter(o=>o.shiftId===shift.id&&Number(o.table)===tableNumber&&o.id!==item?.id&&
+   (visit?o.tableSessionId===visit.id:true));
+  const premium=related.filter(o=>[5000,6000].includes(Number(o.price))).length;
+  const discounted=related.filter(o=>Number(o.price)===4000).length;
+  if(discounted>=premium)warning+=(warning?'\n\n':'')+'Нет свободного кальяна за 5 000 или 6 000 ₸ для цены 4 000 ₸. Всё равно сохранить?';
+ }
+ if(warning&&!f.dataset.confirmed){appConfirm(warning,()=>{f.dataset.confirmed='yes';f.requestSubmit()});return;}
+ f.dataset.confirmed='';
+ if(form.has('coalDone')&&form.has('coalSkipped'))return toast('Выбери один итог замены');
+ const next={id:item?.id||crypto.randomUUID(),shiftId:shift.id,table:Number(form.get('table')),guest:String(form.get('guest')||'').trim(),guestId:ensureGuest(form.get('guest')),flavors,packedAt:packedText?packedAt:null,grams,price,cooling:String(form.get('cooling')||'').trim(),bowl:String(form.get('bowl')||'').trim(),hookah:String(form.get('hookah')||'').trim(),comment:String(form.get('comment')||'').trim(),iiko:form.has('iiko'),litDone:form.has('litDone'),coalPrepared:form.has('coalPrepared'),coalDone:form.has('coalDone'),coalSkipped:form.has('coalSkipped'),status:item?.status||'active'};
+ if(item)Object.assign(item,next);else {const visit=currentTableSession(shift,next.table);if(!visit){toast('Сначала открой стол');return}next.tableSessionId=visit.id;data.hookahs.push(next)}
+ save();paint();toast('Кальян сохранён');showTable(next.table)};
+}
+
+
+function closedHookahRows(shift){
+ return data.hookahs.filter(o=>{
+  if(o.shiftId!==shift.id)return false;
+  if(o.status==='done')return true;
+  const visits=data.tables.filter(v=>v.shiftId===shift.id&&Number(v.table)===Number(o.table)&&v.closedAt);
+  return visits.some(v=>o.tableSessionId?o.tableSessionId===v.id:(Number(o.packedAt||0)>=Date.parse(v.openedAt)&&Number(o.packedAt||0)<=Date.parse(v.closedAt)));
+ }).sort((a,b)=>Number(b.packedAt||0)-Number(a.packedAt||0));
+}
+function closedHookahsMarkup(shift){
+ const rows=closedHookahRows(shift);
+ return '<div class="box closed-box"><div class="sectionhead"><h2>Закрытые кальяны</h2><span class="tag">'+rows.length+'</span></div>'+
+ '<div class="muted">Сохраняются в истории, даже если гости ушли.</div><div class="closed-list">'+
+ (rows.map(o=>'<div class="item"><div><strong>Стол '+esc(o.table)+' · '+esc(o.guest||'Гость')+'</strong><div class="muted">'+esc((o.flavors||[o.flavor]).filter(Boolean).join(', '))+' · '+fmt(o.price)+' ₸ · '+fmt(o.grams)+' г</div></div>'+
+ '<div class="actions"><button class="smallaction" data-closed-view="'+esc(o.id)+'">Открыть</button><button class="smallaction" data-closed-edit="'+esc(o.id)+'">Изменить</button><button class="smallaction danger" data-closed-delete="'+esc(o.id)+'">Удалить</button></div></div>').join('')||'<div class="empty">Пока нет закрытых кальянов</div>')+'</div></div>';
+}
+function wireClosedHookahs(){
+ document.querySelectorAll('[data-closed-view]').forEach(b=>b.onclick=()=>{const o=data.hookahs.find(x=>x.id===b.dataset.closedView);if(!o)return;
+ modal('<div class="modal-head"><h2>Кальян · стол '+esc(o.table)+'</h2><button class="modal-close" data-close-modal>×</button></div>'+
+ '<div class="list"><div class="item"><strong>Гость</strong><span>'+esc(o.guest||'—')+'</span></div>'+
+ '<div class="item"><strong>Вкусы</strong><span>'+esc((o.flavors||[o.flavor]).filter(Boolean).join(', ')||'—')+'</span></div>'+
+ '<div class="item"><strong>Забивка</strong><span>'+(o.packedAt?hhmm(o.packedAt):'—')+'</span></div>'+
+ '<div class="item"><strong>Цена</strong><span>'+fmt(o.price)+' ₸</span></div>'+
+ '<div class="item"><strong>Табак</strong><span>'+fmt(o.grams)+' г</span></div></div>'+
+ '<div class="actions"><button id="closed-open-edit" class="primary">Редактировать</button></div>');
+ $('closed-open-edit').onclick=()=>showOrder(o.id,Number(o.table));
+ });
+ document.querySelectorAll('[data-closed-edit]').forEach(b=>b.onclick=()=>{const o=data.hookahs.find(x=>x.id===b.dataset.closedEdit);if(o)showOrder(o.id,Number(o.table))});
+ document.querySelectorAll('[data-closed-delete]').forEach(b=>b.onclick=()=>{return appConfirm('Удалить закрытый кальян?',()=>{data.hookahs=data.hookahs.filter(o=>o.id!==b.dataset.closedDelete);save();paint();toast('Кальян удалён')})});
+}
+
+function appConfirm(message, proceed){
+ const layer=document.createElement('div');layer.className='modal-backdrop';layer.style.zIndex='2001';
+ layer.innerHTML='<div class="modal-card" role="alertdialog" aria-modal="true"><div class="modal-head"><h2>Подтверждение</h2></div><p>'+esc(message)+'</p>'+
+ '<div class="actions"><button id="confirm-no">Отмена</button><button id="confirm-yes" class="primary">Продолжить</button></div></div>';
+ document.body.append(layer);
+ layer.querySelector('#confirm-no').onclick=()=>layer.remove();
+ layer.querySelector('#confirm-yes').onclick=()=>{layer.remove();proceed()};
+}
+function showVipOpenDialog(shift,n){
+ modal('<div class="modal-head"><h2>Открыть VIP · стол 40</h2><button class="modal-close" data-close-modal>×</button></div>'+
+ '<form id="vip-start-form"><label>Время начала VIP<input type="time" name="vipStart" required></label>'+
+ '<p class="muted">Начало отсчёта часов. Каждый час подтверждается вручную.</p>'+
+ '<div class="actions"><button type="button" data-close-modal>Отмена</button><button class="primary" type="submit">Открыть VIP</button></div></form>');
+ const form=$('vip-start-form');form.elements.vipStart.value=clockNow();
+ form.onsubmit=e=>{e.preventDefault();if(currentTableSession(shift,n)){toast('Стол уже открыт');return}
+ const stamp=timeFromInput(form.elements.vipStart.value);
+ if(!Number.isFinite(stamp))return toast('Укажи время начала');
+ const openedAt=new Date().toISOString();
+ data.tables.push({id:crypto.randomUUID(),shiftId:shift.id,table:n,openedAt,vipStartedAt:new Date(stamp).toISOString(),closedAt:null});
+ save();paint();showTable(n)};
+}
+function showVipEditStart(visit,n){
+ modal('<div class="modal-head"><h2>Изменить начало VIP</h2><button class="modal-close" data-close-modal>×</button></div>'+
+ '<form id="vip-edit-time"><label>Начало VIP (ЧЧ:ММ)<input type="time" name="time" required></label>'+
+ '<p class="muted">При изменении времени пересчитаются напоминания, подтвержденные часы сохранятся.</p>'+
+ '<div class="actions"><button type="button" data-close-modal>Отмена</button><button class="primary">Сохранить</button></div></form>');
+ const f=$('vip-edit-time');f.elements.time.value=hhmm(Date.parse(visit.vipStartedAt||visit.openedAt));
+ f.onsubmit=e=>{e.preventDefault();const t=timeFromInput(f.elements.time.value,visit.vipStartedAt||visit.openedAt);if(!Number.isFinite(t))return toast('Неверное время');visit.vipStartedAt=new Date(t).toISOString();save();paint();showTable(n)};
+}
+function vipRows(visit){return visit?data.vipHours.filter(h=>h.visitId===visit.id).sort((a,b)=>a.hour-b.hour):[]}
+function vipPending(visit){
+ if(!visit||visit.vipCheckClosed)return null;
+ const elapsed=Math.max(0,Date.now()-Date.parse(visit.vipStartedAt||visit.openedAt));
+ const max=1+Math.max(0,Math.floor((elapsed-75*60000)/3600000)+1);
+ const existing=new Set(vipRows(visit).map(h=>h.hour));
+ for(let hour=1;hour<=max;hour++)if(!existing.has(hour))return hour;
+ return null;
+}
+function vipRevenue(shift){return data.tables.filter(v=>v.shiftId===shift.id&&Number(v.table)===40).reduce((sum,v)=>sum+vipRows(v).filter(h=>!h.free).length*1000,0)}
+function vipPastVisits(shift,current){
+ const visits=data.tables.filter(v=>v.shiftId===shift.id&&Number(v.table)===40&&v.id!==current?.id&&vipRows(v).length);
+ if(!visits.length)return '';
+ return '<details class="box" style="margin-top:12px"><summary>Предыдущие VIP-часы ('+visits.reduce((n,v)=>n+vipRows(v).length,0)+')</summary>'+
+ visits.map(v=>'<div class="muted" style="margin-top:9px">VIP с '+hhmm(Date.parse(v.vipStartedAt||v.openedAt))+'</div>'+
+ vipRows(v).map(h=>'<div class="item"><span>Час '+h.hour+' · '+(h.free?'Бесплатно':'1 000 ₸')+'</span>'+
+ '<div class="actions"><button class="smallaction" data-vip-edit="'+esc(h.id)+'">Изменить</button><button class="smallaction danger" data-vip-remove="'+esc(h.id)+'">Удалить</button></div></div>').join('')).join('')+'</details>';
+}
+function editVipHour(hourId,tableNumber){
+ const h=data.vipHours.find(x=>x.id===hourId);if(!h)return;
+ modal('<div class="modal-head"><h2>Изменить VIP · час '+h.hour+'</h2><button class="modal-close" data-close-modal>×</button></div>'+
+ '<form id="vip-edit-hour"><label class="checkline"><input type="checkbox" name="free"> Бесплатно</label>'+
+ '<label class="checkline"><input type="checkbox" name="iiko"> Бегунок iiko есть</label>'+
+ '<div class="actions"><button type="button" data-close-modal>Отмена</button><button class="primary">Сохранить</button></div></form>');
+ const f=$('vip-edit-hour');f.elements.free.checked=!!h.free;f.elements.iiko.checked=!!h.iiko;
+ f.onsubmit=e=>{e.preventDefault();h.free=f.elements.free.checked;h.iiko=f.elements.iiko.checked;save();paint();showTable(tableNumber)};
+}
+function wireAllVipHours(n){
+ document.querySelectorAll('[data-vip-edit]').forEach(btn=>btn.onclick=()=>editVipHour(btn.dataset.vipEdit,n));
+ document.querySelectorAll('[data-vip-remove]').forEach(btn=>btn.onclick=()=>appConfirm('Удалить подтверждение VIP-часа?',()=>{
+ data.vipHours=data.vipHours.filter(x=>x.id!==btn.dataset.vipRemove);save();paint();showTable(n)}));
+}
+function vipPanel(visit){
+ if(!visit)return '';
+ const list=vipRows(visit),next=vipPending(visit);
+ return '<div class="box" style="margin-top:14px"><h2>VIP · часы</h2><div class="muted">Начало: '+hhmm(Date.parse(visit.vipStartedAt||visit.openedAt))+'</div><p class="muted">Каждый час подтверждается вручную; 15 минут после завершения часа — бесплатно.</p>'+
+ (visit.vipCheckClosed?'<div class="alert-row">Чек VIP закрыт. Новые часы не начисляются. <button id="vip-reopen-check" class="smallaction">Отменить отметку</button></div>':next?'<div class="alert-row">Подтвердить час №'+next+'</div>':'')+
+ '<div class="actions" style="justify-content:flex-start"><button id="vip-edit-start" class="smallaction">Изменить время начала</button><button class="primary" id="vip-confirm">Подтвердить час</button></div><div class="list">'+list.map(h=>'<div class="item"><div><strong>Час '+h.hour+' · '+(h.free?'Бесплатно':'Платно')+'</strong><div class="muted">Бегунок iiko: '+(h.iiko?'есть':'нет')+'</div></div><button data-vip-remove="'+h.id+'" class="smallaction danger">Отменить</button></div>').join('')+'</div></div>';
+}
+function wireVipActions(visit,n){
+ if(!visit)return;
+ const revert=$('vip-reopen-check');if(revert)revert.onclick=()=>{return appConfirm('Отменить отметку закрытого чека?',()=>{visit.vipCheckClosed=false;save();paint();showTable(n)})};
+ const editStart=$('vip-edit-start');if(editStart)editStart.onclick=()=>showVipEditStart(visit,n);
+ const add=$('vip-confirm');
+ if(add)add.onclick=()=>{
+ const hour=vipPending(visit)||Math.max(1,...vipRows(visit).map(h=>h.hour+1));
+ modal('<div class="modal-head"><h2>VIP · час '+hour+'</h2><button class="modal-close" data-close-modal>×</button></div><form id="vip-form">'+
+ '<label class="checkline"><input type="checkbox" name="free"> Бесплатно</label>'+
+ '<label class="checkline"><input type="checkbox" name="iiko"> Бегунок в iiko есть</label>'+
+ '<div class="actions"><button class="primary">Подтвердить</button></div></form>');
+ $('vip-form').onsubmit=e=>{e.preventDefault();const f=new FormData(e.target);
+ if(data.vipHours.some(h=>h.visitId===visit.id&&h.hour===hour))return toast('Уже подтверждено');
+ data.vipHours.push({id:crypto.randomUUID(),visitId:visit.id,hour,free:f.has('free'),iiko:f.has('iiko'),createdAt:new Date().toISOString()});
+ save();paint();showTable(n)};
+ };
+
+}
+function currentAlerts(shift){
+ const alerts=[];
+ for(const o of data.hookahs.filter(o=>o.shiftId===shift.id&&o.status!=='done'&&allLiveOrders(shift,Number(o.table)).some(x=>x.id===o.id))){
+ const base=Number(o.packedAt);if(!base)continue;
+ if(!o.litDone&&Date.now()>=base+6*60000)alerts.push({order:o,type:'light'});
+ if(!o.coalDone&&!o.coalSkipped&&Date.now()>=base+29*60000)alerts.push({order:o,type:'coal'});
+ }
+ const vipVisit=currentTableSession(shift,40),vip=vipPending(vipVisit);
+ let vipGrace=null;
+ if(vipVisit){
+   const mins=(Date.now()-Date.parse(vipVisit.vipStartedAt||vipVisit.openedAt))/60000;
+   const next=Math.floor(Math.max(0,mins)/60)+1;
+   const confirmed=new Set(vipRows(vipVisit).map(h=>h.hour));
+   if(mins>=60&&!vip&&!confirmed.has(next))vipGrace={hour:next,remaining:Math.max(0,Math.ceil(75+(next-2)*60-mins))};
+ }
+ return {alerts,vip,vipGrace};
+}
+function hookahMissingFields(order){
+ const absent=[];
+ if(!Number.isInteger(Number(order.table))||Number(order.table)<30||Number(order.table)>40)absent.push('стол');
+ if(!String(order.guest||'').trim())absent.push('имя');
+ if(!(order.flavors||[order.flavor]).some(f=>String(f||'').trim()))absent.push('вкус');
+ if(!String(order.bowl||'').trim())absent.push('чаша');
+ if(!String(order.hookah||'').trim())absent.push('кальян');
+ if(order.grams===null||order.grams===undefined||order.grams===''||!Number.isFinite(Number(order.grams))||Number(order.grams)<=0)absent.push('граммовка');
+ if(order.price===null||order.price===undefined||order.price===''||!Number.isFinite(Number(order.price)))absent.push('цена');
+ if(!order.iiko)absent.push('бегунок iiko');
+ return absent;
+}
+function renderAlerts(){
+ const shift=openShift(),node=$('shift-alerts');if(!shift||!node)return;
+ const state=currentAlerts(shift);
+ const missing=data.hookahs.filter(o=>o.shiftId===shift.id&&!hookahCompletedOnTable(shift,Number(o.table),o,currentTableSession(shift,Number(o.table)))).map(o=>({order:o,fields:hookahMissingFields(o)})).filter(x=>x.fields.length);
+ node.innerHTML=(missing.map(x=>'<div class="alert-row"><strong>Стол '+esc(x.order.table)+' · заполнить: '+esc(x.fields.join(', '))+'</strong><div class="actions"><button class="primary" data-incomplete-hookah="'+esc(x.order.id)+'">Заполнить</button></div></div>').join(''))+
+ (state.alerts.map(a=>'<div class="alert-row"><strong>Стол '+a.order.table+' · '+(a.type==='light'?'Пора раскуривать':a.order.coalPrepared?'Угли поставлены · ожидание замены':'Поставить угли к замене')+'</strong><div class="actions">'+(a.type==='coal'&&!a.order.coalPrepared?'<button class="primary" data-alert="'+a.order.id+'" data-alert-type="coal" data-result="prepared">Угли поставлены</button>':'')+'<button data-alert="'+a.order.id+'" data-alert-type="'+a.type+'" data-result="yes">'+(a.type==='light'?'Раскурен / отдан':'Угли заменены')+'</button>'+
+ (a.type==='coal'?'<button data-alert="'+a.order.id+'" data-alert-type="coal" data-result="skip">Не потребовалась</button>':'')+'</div></div>').join('')||'<div class="muted">Нет срочных напоминаний</div>')+
+ (state.vipGrace?'<div class="alert-row"><strong>VIP · льготные 15 минут. Час '+state.vipGrace.hour+' · осталось '+state.vipGrace.remaining+' мин</strong></div>':'')+
+ (state.vip?'<div class="alert-row"><strong>VIP · час '+state.vip+' требует подтверждения</strong><div class="actions"><button id="vip-alert-paid">Отбили</button><button id="vip-alert-free">Бесплатно</button><button id="vip-alert-closed">Чек закрыт</button><button id="open-vip">Открыть VIP</button></div></div>':'');
+ const washing=shiftWashStatus(shift),pending= washing.planned.filter(p=>!p.done);
+ if(washing.planned.length){
+  node.innerHTML+='<div class="alert-row"><strong>Мойка кальянов · '+pending.length+' из '+washing.planned.length+' по графику ещё не помыто</strong>'+
+  (pending.length?'<div class="muted">'+pending.map(p=>esc(p.hookah.name)).join(', ')+'</div>':'<div class="muted">Все плановые кальяны помыты</div>')+
+  '<div class="actions"><button class="primary" id="go-washing">Открыть мойку</button></div></div>';
+ }
+ const goWashing=$('go-washing');if(goWashing)goWashing.onclick=showShiftInfo;
+ node.querySelectorAll('[data-incomplete-hookah]').forEach(b=>b.onclick=()=>{const o=data.hookahs.find(x=>x.id===b.dataset.incompleteHookah);if(o)showOrder(o.id,Number(o.table))});
+ node.querySelectorAll('[data-alert]').forEach(b=>b.onclick=()=>{const o=data.hookahs.find(x=>x.id===b.dataset.alert);if(!o)return;
+ if(b.dataset.alertType==='light')o.litDone=true;else if(b.dataset.result==='prepared'){o.coalPrepared=true;o.coalPreparedAt=new Date().toISOString()}else{o.coalDone=b.dataset.result==='yes';o.coalSkipped=b.dataset.result==='skip'}
+ save();paint()});
+ const btn=$('open-vip');if(btn)btn.onclick=()=>showTable(40);
+ const visit=currentTableSession(shift,40);
+ for(const [id,type] of [['vip-alert-paid','paid'],['vip-alert-free','free'],['vip-alert-closed','closed']]){const el=$(id);if(el)el.onclick=()=>{if(!visit)return;const hour=vipPending(visit);if(!hour)return toast('Нет часов для подтверждения');return appConfirm(type==='closed'?'Отметить чек VIP закрытым и остановить дальнейшие напоминания?':'Подтвердить VIP час '+hour+' — '+(type==='free'?'бесплатно':'отбили')+'?',()=>{if(type==='closed'){visit.vipCheckClosed=true;visit.vipCheckClosedAt=new Date().toISOString()}else data.vipHours.push({id:crypto.randomUUID(),visitId:visit.id,hour,free:type==='free',iiko:type==='paid',createdAt:new Date().toISOString()});save();paint()})}}
+}
+
+function bookingMarkup(b){
+ return '<div class="booking-item '+(b.status==='arrived'?'booking-highlight':b.status==='no_show'?'finished':'')+'"><strong>'+esc(displayDate(b.day))+' · '+esc(b.time)+' · '+esc(b.name)+'</strong>'+
+ '<div class="muted">Стол '+esc(b.table)+' · '+esc(b.party)+' гостей · '+(b.status==='arrived'?'Пришла':b.status==='no_show'?'Не пришла':'Ожидается')+'</div>'+
+ '<div class="actions"><button class="smallaction" data-booking-status="'+esc(b.id)+'" data-status="arrived">Пришла</button><button class="smallaction" data-booking-status="'+esc(b.id)+'" data-status="no_show">Не пришла</button>'+(b.status!=='pending'?'<button class="smallaction" data-booking-status="'+esc(b.id)+'" data-status="pending">Снять отметку</button>':'')+(b.status==='arrived'?'<button class="smallaction" data-booking-transfer="'+esc(b.id)+'">На стол</button>':'')+'<button class="smallaction" data-booking-edit="'+esc(b.id)+'">Изменить</button><button class="smallaction danger" data-booking-delete="'+esc(b.id)+'">Удалить</button></div></div>';
+}
+function formatKzPhone(value){
+ let digits=String(value||'').replace(/\D/g,'');
+ if(digits.startsWith('8')&&digits.length>=11)digits='7'+digits.slice(1);
+ if(digits.startsWith('7'))digits=digits.slice(1);
+ digits=digits.slice(0,10);
+ if(!digits)return '';
+ const chunks=[digits.slice(0,3),digits.slice(3,6),digits.slice(6,8),digits.slice(8,10)].filter(Boolean);
+ return '+7 '+chunks.join(' ');
+}
+function validKzPhone(value){return /^\+7 \d{3} \d{3} \d{2} \d{2}$/.test(String(value||''))}
+function showBooking(id,table){
+ const item=data.bookings.find(b=>b.id===id);
+ modal('<div class="modal-head"><h2>'+(item?'Изменить бронь':'Новая бронь')+'</h2><button class="modal-close" data-close-modal>×</button></div>'+
+ '<form id="dialog-booking"><div class="formgrid">'+
+ '<label>Дата<input type="date" name="day" required></label>'+
+ '<label>Время<input type="time" name="time" required></label>'+
+ '<label>Имя гостя<input name="name" data-catalog="guests" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="90" required placeholder="Введите или выберите гостя"></label>'+
+ '<label>Телефон<input type="tel" name="phone" inputmode="tel" autocomplete="off" maxlength="40" placeholder="+7 000 000 00 00"></label>'+
+ '<label>Гостей<input name="party" type="number" min="1" max="50" placeholder="Укажите количество гостей" required></label>'+
+ '<label>Стол<select name="table" required><option value="" selected disabled>Выберите стол</option>'+
+ Array.from({length:11},(_,i)=>'<option value="'+(30+i)+'">'+(30+i)+'</option>').join('')+'</select></label>'+
+ '<label class="wide">Комментарий<input name="comment" maxlength="350" placeholder="Комментарий (необязательно)"></label></div>'+
+ '<div class="actions"><button type="button" data-close-modal>Отмена</button><button type="submit" class="primary">Сохранить бронь</button></div></form>');
+ const f=$('dialog-booking');
+ if(item){
+  for(const key of ['day','time','name','party','table','phone','comment'])f.elements[key].value=item[key]??'';
+ }else{
+  f.elements.day.value=localDay();
+ }
+ const nameInput=f.elements.name,phoneInput=f.elements.phone;
+ let chosenGuestId=item?.guestId||null;
+ function matchGuest(){
+  const key=nameInput.value.trim().replace(/\\s+/g,' ').toLocaleLowerCase('ru');
+  return REMOTE_GUESTS.find(g=>g.name.trim().replace(/\\s+/g,' ').toLocaleLowerCase('ru')===key)||null;
+ }
+ function syncGuest(){
+  const guest=matchGuest();
+  if(guest){
+   chosenGuestId=guest.id;
+   phoneInput.value=guest.phone||'';
+  }else{
+   chosenGuestId=null;
+   // Do not retain a different guest's phone when name changes.
+   if(nameInput.dataset.autofilledPhone==='yes')phoneInput.value='';
+  }
+  nameInput.dataset.autofilledPhone=guest?'yes':'';
+ }
+ nameInput.addEventListener('input',syncGuest);
+ nameInput.addEventListener('change',syncGuest);
+ phoneInput.addEventListener('input',()=>{phoneInput.value=formatKzPhone(phoneInput.value);nameInput.dataset.autofilledPhone=''});
+ f.onsubmit=e=>{
+  e.preventDefault();const d=new FormData(f),phone=String(d.get('phone')||'').trim();
+  if(phone&&!validKzPhone(phone))return toast('Телефон: укажи полный номер +7 000 000 00 00');
+  const name=String(d.get('name')||'').trim(),guest=matchGuest();
+  const next={id:item?.id||crypto.randomUUID(),day:String(d.get('day')),time:String(d.get('time')),
+   name,guestId:guest?.id||null,party:Number(d.get('party')),table:Number(d.get('table')),
+   phone,comment:String(d.get('comment')||'').trim(),status:item?.status||'pending'};
+  if(item)Object.assign(item,next);else data.bookings.push(next);
+  save();closeModal();paint();toast('Бронь сохранена');
+ };
+}
+const WEEKDAY_NAMES=['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
+function washWeekday(day){
+ const n=new Date(String(day).slice(0,10)+'T12:00:00').getDay();
+ return n===0?7:n;
+}
+function washCatalog(){return (LIST_CATALOG.hookahs||[]).filter(x=>x.active)}
+function shiftWashStatus(shift){
+ const today=washWeekday(shift.day),all=washCatalog();
+ const entries=data.washings.filter(w=>w.shiftId===shift.id);
+ const key=x=>String(x||'').trim().toLocaleLowerCase('ru');
+ const planned=all.filter(x=>(x.washingWeekdays||[]).includes(today)).map(h=>{
+  const mark=entries.find(w=>w.hookahId===h.id||key(w.name)===key(h.name));
+  return {hookah:h,mark,done:!!mark?.done};
+ });
+ return {planned,extra:entries.filter(w=>!planned.some(p=>p.mark?.id===w.id))};
+}
+function markWashed(shift,hookah,done){
+ const key=x=>String(x||'').trim().toLocaleLowerCase('ru');
+ let mark=data.washings.find(w=>w.shiftId===shift.id&&(w.hookahId===hookah.id||key(w.name)===key(hookah.name)));
+ if(!mark){mark={id:crypto.randomUUID(),shiftId:shift.id,hookahId:hookah.id,name:hookah.name,done:false};data.washings.push(mark)}
+ mark.hookahId=hookah.id;mark.name=hookah.name;mark.done=done;mark.completedAt=done?new Date().toISOString():null;
+ save();paint();
+}
+function openWashScheduleEditor(){
+ const hookahs=washCatalog().slice().sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+ if(!flavorCatalogLoaded)return toast('Дождись загрузки справочников');
+ modal('<div class="modal-head"><h2>График мойки</h2><button class="modal-close" data-close-modal>×</button></div>'+
+ '<p class="muted">Выбирай любые дни для каждого кальяна. Пустой график разрешён. Изменения сохраняются в Google Таблице.</p>'+
+ '<div class="wash-schedule-list">'+hookahs.map(h=>'<div class="wash-schedule-item"><strong>'+esc(h.name)+'</strong><div class="wash-days">'+WEEKDAY_NAMES.map((d,i)=>'<label><input type="checkbox" data-wash-day="'+esc(h.id)+'" value="'+(i+1)+'" '+((h.washingWeekdays||[]).includes(i+1)?'checked':'')+'>'+d.slice(0,2)+'</label>').join('')+'</div></div>').join('')+'</div>'+
+ '<div class="actions"><button type="button" data-close-modal>Отмена</button><button id="wash-schedule-save" class="primary">Сохранить график</button></div>',true);
+ $('wash-schedule-save').onclick=()=>{
+  const updates=hookahs.map(h=>({id:h.id,days:[...document.querySelectorAll('input[data-wash-day="'+CSS.escape(h.id)+'"]:checked')].map(x=>Number(x.value))}));
+  const btn=$('wash-schedule-save');btn.disabled=true;btn.textContent='Сохраняем…';
+  google.script.run.withSuccessHandler(()=>{
+   hookahs.forEach(h=>{h.washingWeekdays=updates.find(u=>u.id===h.id)?.days||[]});
+   toast('График мойки сохранён');paint();showShiftInfo();
+  }).withFailureHandler(e=>{btn.disabled=false;btn.textContent='Сохранить график';toast('Ошибка: '+(e.message||e))}).crSetWashingSchedule(updates);
+ };
+}
+function showShiftInfo(){
+ const shift=openShift();if(!shift)return;
+ const info=shiftWashStatus(shift),items=washCatalog();
+ modal('<div class="modal-head"><h2>Мойка кальянов · '+esc(displayDate(shift.day))+'</h2><button class="modal-close" data-close-modal>×</button></div>'+
+ '<p class="muted">'+WEEKDAY_NAMES[washWeekday(shift.day)-1]+' · по графику: '+info.planned.length+' · помыто: '+info.planned.filter(p=>p.done).length+'. Если ничего не помыли, оставляй без отметок.</p>'+
+ '<div class="actions" style="justify-content:flex-start"><button id="wash-edit-schedule">Изменить график</button></div>'+
+ '<h2 style="margin-top:20px">По графику</h2><div class="list">'+(info.planned.map(p=>
+ '<div class="item"><label class="checkline"><input type="checkbox" data-wash-hookah="'+esc(p.hookah.id)+'" '+(p.done?'checked':'')+'> '+esc(p.hookah.name)+'</label><span class="muted">'+(p.done?'Помыт':'Не помыт')+'</span></div>').join('')||'<div class="empty">Сегодня плановая мойка не назначена</div>')+'</div>'+
+ '<h2 style="margin-top:20px">Дополнительная мойка</h2>'+
+ '<div class="actions" style="justify-content:flex-start"><input id="wash-name" data-catalog="hookahs" placeholder="Выбрать кальян из списка" maxlength="90"><button id="add-wash">Добавить</button></div>'+
+ '<div class="list">'+(info.extra.map(w=>'<div class="item"><label class="checkline"><input type="checkbox" data-wash-extra="'+esc(w.id)+'" '+(w.done?'checked':'')+'> '+esc(w.name)+'</label><button class="smallaction danger" data-delete-wash="'+esc(w.id)+'">Удалить</button></div>').join('')||'<div class="muted">Дополнительных моек нет</div>')+'</div>',true);
+ $('wash-edit-schedule').onclick=openWashScheduleEditor;
+ $('add-wash').onclick=()=>{
+  const name=$('wash-name').value.trim(),h=items.find(x=>x.name.toLocaleLowerCase('ru')===name.toLocaleLowerCase('ru'));
+  if(!h)return toast('Выбери кальян из списка');
+  const existing=data.washings.find(w=>w.shiftId===shift.id&&(w.hookahId===h.id||w.name.toLocaleLowerCase('ru')===name.toLocaleLowerCase('ru')));
+  if(info.planned.some(p=>p.hookah.id===h.id)||existing)return toast('Этот кальян уже добавлен на сегодня');
+  data.washings.push({id:crypto.randomUUID(),shiftId:shift.id,hookahId:h.id,name:h.name,done:false,extra:true});
+  save();paint();showShiftInfo();
+ };
+ document.querySelectorAll('[data-wash-hookah]').forEach(b=>b.onchange=()=>{const h=items.find(x=>x.id===b.dataset.washHookah);if(h){markWashed(shift,h,b.checked);showShiftInfo()}});
+ document.querySelectorAll('[data-wash-extra]').forEach(b=>b.onchange=()=>{const w=data.washings.find(x=>x.id===b.dataset.washExtra);if(w){w.done=b.checked;w.completedAt=b.checked?new Date().toISOString():null;save();paint();showShiftInfo()}});
+ document.querySelectorAll('[data-delete-wash]').forEach(b=>b.onclick=()=>appConfirm('Удалить отметку мойки?',()=>{data.washings=data.washings.filter(x=>x.id!==b.dataset.deleteWash);save();paint();showShiftInfo()}));
+}
+function transferBookingToTable(b){
+ const shift=openShift();if(!shift)return toast('Сначала открой смену');
+ if(b.status!=='arrived')return toast('Сначала отметь, что бронь пришла');
+ const n=Number(b.table);
+ if(!currentTableSession(shift,n))data.tables.push({id:crypto.randomUUID(),shiftId:shift.id,table:n,openedAt:new Date().toISOString(),closedAt:null,guestId:b.guestId||null,guestName:b.name,bookingId:b.id});
+ b.transferred=true;save();paint();showTable(n);
+}
+function wireBookingList(root){
+ root.querySelectorAll('[data-booking-transfer]').forEach(btn=>btn.onclick=()=>{const b=data.bookings.find(x=>x.id===btn.dataset.bookingTransfer);if(b)transferBookingToTable(b)});
+ root.querySelectorAll('[data-booking-status]').forEach(b=>b.onclick=()=>{const item=data.bookings.find(x=>x.id===b.dataset.bookingStatus);if(item){item.status=b.dataset.status;save();paint()}});
+ root.querySelectorAll('[data-booking-edit]').forEach(b=>b.onclick=()=>showBooking(b.dataset.bookingEdit));
+ root.querySelectorAll('[data-booking-delete]').forEach(b=>b.onclick=()=>{return appConfirm('Удалить бронь?',()=>{data.bookings=data.bookings.filter(x=>x.id!==b.dataset.bookingDelete);save();paint()})});
+}
+
+function pastNum(value){
+ return value===null||value===undefined?'—':fmt(value);
+}
+function pastMetricBlock(label,source,calculated,suffix=''){
+ const value=v=>v===null||v===undefined?'—':fmt(v)+(suffix?' '+suffix:'');
+ return '<div class="past-metric"><span>'+esc(label)+'</span><strong>'+esc(value(source))+'</strong>'+
+ '<small>По кальянам: '+esc(value(calculated))+'</small></div>';
+}
+function pastLoadIndex(force=false){
+ if(PAST_LOADING)return;
+ if(PAST_DATA&&!force){if(tab==='past')paint();return}
+ PAST_LOADING=true;PAST_LAST_ERROR='';if(tab==='past')paint();
+ google.script.run.withSuccessHandler(out=>{
+  PAST_LOADING=false;PAST_DATA=out&&out.ok?out:null;
+  if(!PAST_DATA)PAST_LAST_ERROR='Некорректные данные архива';
+  if(tab==='past')paint();
+ }).withFailureHandler(err=>{
+  PAST_LOADING=false;PAST_LAST_ERROR=String(err.message||err);if(tab==='past')paint();
+ }).crPastShiftIndex();
+}
+function pastRender(){
+ const root=$('content');
+ if(!PAST_DATA&&!PAST_LOADING&&!PAST_LAST_ERROR)pastLoadIndex();
+ if(!PAST_DATA){
+  root.innerHTML='<div class="box"><div class="sectionhead"><h2>История смен</h2><button id="past-retry">Обновить</button></div>'+
+   '<p class="muted">'+esc(PAST_LOADING?'Загружаем историю смен…':PAST_LAST_ERROR||'Подготавливаем архив…')+'</p></div>';
+  $('past-retry').onclick=()=>pastLoadIndex(true);return;
+ }
+ const records=PAST_DATA.rows,months=[...new Set(records.map(r=>r.date.slice(0,7)))].sort().reverse();
+ const workers=[...new Set(records.map(r=>r.worker).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ru'));
+ const card='<div class="box"><div class="sectionhead"><h2>История смен</h2><button id="past-refresh">Обновить</button></div>'+
+ '<p class="muted">'+PAST_DATA.shiftRecords+' исходных смен · '+PAST_DATA.hookahRecords+' кальянов · '+PAST_DATA.flaggedDays+' дней требуют внимания. Период: '+esc(displayDate(PAST_DATA.from))+' — '+esc(displayDate(PAST_DATA.to))+'.</p>'+
+ '<p class="muted">Исторические записи не редактируются. Итоги из сменных отчётов и суммы кальянов показаны раздельно.</p>'+
+ '<div class="past-filter-grid"><label>Месяц<select id="past-month"><option value="">Все месяцы</option>'+
+ months.map(m=>'<option value="'+esc(m)+'" '+(PAST_FILTERS.month===m?'selected':'')+'>'+esc(m.slice(5)+'.'+m.slice(0,4))+'</option>').join('')+'</select></label>'+
+ '<label>Кальянщик<select id="past-worker"><option value="">Все кальянщики</option>'+
+ workers.map(w=>'<option value="'+esc(w)+'" '+(PAST_FILTERS.worker===w?'selected':'')+'>'+esc(w)+'</option>').join('')+'</select></label>'+
+ '<label>Дата или сотрудник<input id="past-search" autocomplete="off" placeholder="Поиск" value="'+esc(PAST_FILTERS.search)+'"></label>'+
+ '<label class="past-check"><input type="checkbox" id="past-issues" '+(PAST_FILTERS.issues?'checked':'')+'>Только расхождения</label></div>'+
+ '<div class="muted" id="past-found-count"></div><div id="past-shift-rows" class="past-shift-rows"></div>'+
+ '<div class="actions"><button id="past-more" type="button">Показать ещё</button></div></div>';
+ root.innerHTML=card;
+ $('past-refresh').onclick=()=>pastLoadIndex(true);
+ const update=()=>{
+  PAST_FILTERS.month=$('past-month').value;PAST_FILTERS.worker=$('past-worker').value;
+  PAST_FILTERS.search=$('past-search').value.trim().toLocaleLowerCase('ru');
+  PAST_FILTERS.issues=$('past-issues').checked;
+  PAST_VISIBLE=60;draw();
+ };
+ $('past-month').onchange=update;$('past-worker').onchange=update;
+ $('past-search').oninput=update;$('past-issues').onchange=update;
+ function filtered(){
+  return records.filter(r=>(!PAST_FILTERS.month||r.date.startsWith(PAST_FILTERS.month))&&
+   (!PAST_FILTERS.worker||r.worker===PAST_FILTERS.worker)&&(!PAST_FILTERS.issues||r.flags.length>0)&&
+   (!PAST_FILTERS.search||[r.date,displayDate(r.date),r.worker,r.note].join(' ').toLocaleLowerCase('ru').includes(PAST_FILTERS.search)));
+ }
+ function draw(){
+  const visible=filtered();
+  $('past-found-count').textContent='Найдено дней: '+visible.length;
+  $('past-shift-rows').innerHTML=visible.slice(0,PAST_VISIBLE).map(r=>{
+   const c=r.calculated,flag=r.flags.length>0;
+   return '<button type="button" class="past-shift-row" data-past-date="'+esc(r.date)+'"><div class="past-shift-main"><strong>'+esc(displayDate(r.date))+'</strong>'+
+   '<span>'+esc(r.worker||'Сотрудник не указан')+'</span>'+(flag?'<span class="past-flag">Есть расхождения</span>':'')+'</div>'+
+   '<div class="past-shift-numbers"><span>Кальянов: '+esc(pastNum(r.count))+' / '+c.count+'</span>'+
+   '<span>Кальяны: '+esc(pastNum(r.revenue))+' / '+fmt(c.revenue)+' ₸</span>'+
+   '<span>VIP: '+esc(pastNum(r.vip))+' ₸</span></div></button>';
+  }).join('')||'<p class="empty">Смены не найдены</p>';
+  $('past-more').hidden=PAST_VISIBLE>=visible.length;
+  $('past-shift-rows').querySelectorAll('[data-past-date]').forEach(b=>b.onclick=()=>showPastShift(b.dataset.pastDate));
+ }
+ $('past-more').onclick=()=>{PAST_VISIBLE+=60;draw()};
+ draw();
+}
+function showPastShift(date){
+ modal('<div class="modal-head"><h2>Прошлая смена · '+esc(displayDate(date))+'</h2><button data-close-modal>×</button></div>'+
+ '<div id="past-shift-detail"><p class="muted">Загружаем данные смены…</p></div>',true);
+ const target=$('past-shift-detail');
+ google.script.run.withSuccessHandler(data=>{
+  if(!target.isConnected)return;
+  if(!data||!data.ok){target.textContent='Не удалось открыть смену';return}
+  const source=data.shifts[0],calc=data.calculated;
+  let html='';
+  if(data.shifts.length!==1)html+='<p class="past-alert">Записей итогов за день: '+data.shifts.length+'. Данные не объединены автоматически.</p>';
+  if(data.flags.length)html+='<p class="past-alert">Есть различия с исходным отчётом или незаполненные значения. Проверь итоги.</p>';
+  html+='<div class="past-detail-metrics">'+
+   pastMetricBlock('Кальяны, шт.',source?.count??null,calc.count)+
+   pastMetricBlock('Выручка кальянов',source?.revenue??null,calc.revenue,'₸')+
+   pastMetricBlock('Расход табака',source?.grams??null,calc.grams,'г')+
+   '<div class="past-metric"><span>Выручка VIP (исходная)</span><strong>'+esc(pastNum(source?.vip))+' ₸</strong>'+
+   '<small>VIP часов по строкам: '+fmt(calc.vipHours)+'</small></div></div>';
+  html+='<div class="past-shift-people"><strong>Кальянщик:</strong> '+esc(source?.worker||data.orders[0]?.worker||'—')+
+   ' · <strong>Официант:</strong> '+esc(data.orders[0]?.waiter||'—')+'</div>';
+  if(source?.note)html+='<p class="muted">'+esc(source.note)+'</p>';
+  html+='<h3>Кальяны · '+data.orders.length+'</h3><div class="past-orders">';
+  html+=data.orders.map((o,i)=>'<details class="past-order"><summary><strong>'+esc(o.packed||'Без времени')+' · стол '+esc(o.table||'—')+'</strong>'+
+   '<span>'+esc(o.name||'Гость не указан')+'</span><span>'+esc(pastNum(o.price))+' ₸</span></summary>'+
+   '<div class="past-order-content"><p><strong>Вкусы:</strong> '+esc(o.flavors.join(', ')||'—')+'</p>'+
+   '<p><strong>Чаша:</strong> '+esc(o.bowl||'—')+' · <strong>Холодок:</strong> '+esc(o.cooling||'—')+' · <strong>Табак:</strong> '+esc(pastNum(o.grams))+' г</p>'+
+   '<p><strong>Раскур:</strong> '+esc(o.lit||'—')+' · <strong>Замена углей:</strong> '+esc(o.coalTime||'—')+
+   ' · <strong>Отметка iiko:</strong> '+esc(o.iiko||'—')+'</p>'+
+   (o.comment?'<p><strong>Комментарий:</strong> '+esc(o.comment)+'</p>':'')+
+   (o.vipHours!==null?'<p><strong>VIP часов по строке:</strong> '+esc(o.vipHours)+'</p>':'')+
+   '<p class="muted">Источник: лист '+esc(o.sourceSheet||'—')+', колонка '+esc(o.sourceColumn||'—')+', строка '+esc(o.sourceRow||'—')+'</p></div></details>').join('');
+  html+='</div><h3>Мойка кальянов</h3>';
+  html+=data.washing.length?data.washing.map(w=>
+   '<div class="past-wash"><div class="muted">Отдал: '+esc(w.given||'—')+' · смен: '+esc(w.shifts||'—')+' · в среднем: '+esc(w.average||'—')+'</div>'+
+   (w.items.length?w.items.map(x=>'<div>'+esc(x.name)+' · '+(String(x.done).toUpperCase()==='TRUE'?'Помыт':'Не отмечен')+'</div>').join(''):'<p class="muted">Кальяны для мойки не указаны</p>')+'</div>').join(''):
+   '<p class="muted">Данные мойки за этот день отсутствуют.</p>';
+  html+='<p class="muted">История только для просмотра. Данные исходного архива не изменяются.</p>';
+  target.innerHTML=html;
+ }).withFailureHandler(err=>{if(target.isConnected)target.innerHTML='<p class="past-alert">Ошибка загрузки: '+esc(err.message||err)+'</p>'}).crPastShiftDetail(date);
+}
+function paint(){
+document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+$('title').textContent=({home:'Обзор',shifts:'Текущая смена',past:'Прошлые смены',guests:'Гости',lists:'Списки',system:'Система'})[tab];
+const root=$('content'),active=openShift();
+if(tab==='past'){pastRender();return}
+if(tab==='home'){
+ root.innerHTML='<div class="metrics">'+metric('Общие смены',data.shifts.length)+metric('Кальяны смены',data.hookahs.length)+metric('Гости в базе',REMOTE_GUESTS.length)+'</div>'+
+ '<div class="box"><h2>Текущая общая смена</h2>'+(active?'<p><strong>'+esc(displayDate(active.day))+'</strong> · '+active.employees.map(esc).join(', ')+'</p><p class="muted">Официант: '+esc(active.waiter||'—')+'</p>':'<p class="muted">Смена не открыта</p>')+
+ '<button class="primary" id="go-shifts">Перейти к сменам</button></div>';
+ $('go-shifts').onclick=()=>{tab='shifts';paint()};
+}
+if(tab==='shifts'){
+ const main=$('content');
+ main.innerHTML='<div class="box sync-top"><div class="sectionhead"><h2>Общая смена</h2><span class="tag">Google Sheets</span></div><div id="live-sync-status"></div>'+
+ '<div class="actions"><button type="button" id="live-shift-refresh">Обновить с сервера</button></div></div>';
+ $('live-shift-refresh').onclick=()=>{if(syncDirty)return toast('Есть несинхронизированные изменения. Сначала отправь их.');initLiveShift()};
+ if(syncMode==='conflict'||syncMode==='loading'||syncMode==='unavailable'){
+  main.innerHTML+='<div class="box"><h2>'+(syncMode==='loading'?'Загрузка общей смены…':syncMode==='conflict'?'Конфликт данных':'Нет связи с сервером')+'</h2><p class="muted">'+esc(syncError||'Подключаемся к Google Sheets')+'</p>'+
+   (syncMode==='conflict'?'<p>Изменения остались на этом устройстве. Для продолжения требуется сверка, автоматического перезаписывания нет.</p>':'')+'</div>';
+  renderSyncStatus();
+  return;
+ }
+ if(syncMode==='none'){
+  main.innerHTML+='<div class="box"><h2>Нет открытой смены</h2><p class="muted">Создай общую смену в разделе «Система».</p><button id="go-create-shared">Перейти в систему</button></div>';
+  $('go-create-shared').onclick=()=>{tab='system';paint()};return;
+ }
+ if(syncMode==='offline')renderSyncStatus();
+ if(!active){
+  main.innerHTML+='<div class="box">Смена отсутствует в полученном состоянии. Перезагрузи данные с сервера.</div>';
+ }else{
+ const orders=data.hookahs.filter(o=>o.shiftId===active.id);
+ const bookings=data.bookings.filter(b=>b.day>=localDay()||b.day===active.day).sort((a,b)=>{
+ const finished=x=>x.status==='pending'?0:1;return finished(a)-finished(b)||(a.day+a.time).localeCompare(b.day+b.time)});
+ const washed=data.washings.filter(w=>w.shiftId===active.id&&w.done).length;const hookahRevenue=orders.reduce((a,o)=>a+Number(o.price||0),0),vipSum=vipRevenue(active);
+ root.insertAdjacentHTML('beforeend','<div class="shift-layout"><div class="map-column"><div class="box mapbox"><div class="sectionhead"><h2>Схема зала</h2><span class="muted">Нажми на стол</span></div>'+hallMarkup(active)+'</div>'+closedHookahsMarkup(active)+'</div>'+
+ '<div class="right-stack">'+
+ '<div class="box compact-shift"><div class="sectionhead"><h2>Смена · '+esc(displayDate(active.day))+'</h2><span class="tag">Открыта</span></div>'+
+ '<div class="shift-people"><label>Кальянщик 1<input id="worker-a" maxlength="80" '+(!editWorkers?'disabled':'')+' value="'+esc(active.employees[0]||'')+'"></label>'+
+ (active.employees[1]||showSecondWorker?'<label>Кальянщик 2<input id="worker-b" maxlength="80" '+(!editWorkers?'disabled':'')+' value="'+esc(active.employees[1]||'')+'"></label>':'')+
+ '<label>Официант<input id="waiter" maxlength="80" '+(!editWorkers?'disabled':'')+' value="'+esc(active.waiter||'')+'"></label>'+
+ '<div class="actions">'+(editWorkers?'<button id="add-second-worker" class="smallaction">+ второй</button><button id="save-workers" class="primary">Сохранить</button>':'<button id="edit-workers" class="primary">Изменить</button>')+'</div></div></div>'+
+ '<div class="box"><div class="summary-row"><h2 style="margin:0">Мойка кальянов</h2><button id="shift-info" class="smallaction">Открыть</button></div><div class="muted">Помыто: '+washed+' кальянов</div></div>'+
+ '<div class="metrics compact-metrics">'+metric('Кальянов',orders.length)+metric('Кальяны, ₸',fmt(hookahRevenue))+metric('VIP, ₸',fmt(vipSum))+metric('Всего, ₸',fmt(hookahRevenue+vipSum))+metric('Табак',fmt(orders.reduce((a,o)=>a+Number(o.grams||0),0))+' г')+'</div>'+
+ '<div class="box alerts-box"><h2>Напоминания</h2><div id="shift-alerts"></div></div>'+
+ '<div class="box bookings-panel"><div class="sectionhead"><h2>Брони</h2><button class="primary smallaction" id="new-booking">+ Бронь</button></div><div class="muted">Ближайшие ожидаемые сверху, отмеченные снизу</div>'+
+ '<div id="booking-list">'+(bookings.map(bookingMarkup).join('')||'<div class="empty">Нет броней</div>')+'</div></div></div></div>'+
+ '<details class="box"><summary>История смен</summary><div class="list">'+data.shifts.slice().reverse().map(s=>'<div class="item"><strong>'+esc(displayDate(s.day))+'</strong><span class="tag">'+(s.status==='open'?'Открыта':'Закрыта')+'</span></div>').join('')+'</div></details>'+
+ '<div class="box"><div class="actions"><button class="danger" id="close-shift">Закрыть смену</button></div></div>');
+ if($('edit-workers'))$('edit-workers').onclick=()=>{editWorkers=true;paint()};
+ if($('add-second-worker'))$('add-second-worker').onclick=()=>{showSecondWorker=true;paint();$('worker-b').focus()};
+ if($('save-workers'))$('save-workers').onclick=()=>{const a=$('worker-a').value.trim(),b=$('worker-b')?$('worker-b').value.trim():'';if(!a||(b&&a.toLowerCase()===b.toLowerCase()))return toast('Проверь кальянщиков');active.employees=[a,b].filter(Boolean);active.waiter=$('waiter').value.trim();editWorkers=false;showSecondWorker=!!b;save();paint();toast('Сотрудники изменены')};
+ root.querySelectorAll('[data-hall-table]').forEach(b=>b.onclick=()=>showTable(Number(b.dataset.hallTable)));
+ wireClosedHookahs();
+ $('new-booking').onclick=()=>showBooking();
+ wireBookingList(root);
+ $('shift-info').onclick=showShiftInfo;
+ renderAlerts();
+ $('close-shift').onclick=()=>appConfirm('Закрыть общую смену в Google Sheets? Убедись, что изменения синхронизированы.',()=>{
+   if(syncDirty||syncBusy||syncMode!=='shared')return toast('Сначала дождись синхронизации');
+   google.script.run.withSuccessHandler(()=>{toast('Смена закрыта');initLiveShift()}).withFailureHandler(err=>toast('Ошибка закрытия: '+String(err.message||err))).crLiveCloseShift(active.id);
+ });
+ refreshTileTimers();
+ renderSyncStatus();
+ }
+}
+if(tab==='hookahs'){tab='shifts';paint();return;
+
+  tab='shifts';paint();return;
+}
+if(tab==='lists'){
+ const sections=[{key:'flavors',label:'Табаки и вкусы'},{key:'bowls',label:'Чаши'},{key:'hookahs',label:'Кальяны'},{key:'cooling',label:'Холодок'},{key:'prices',label:'Цены'}];
+ root.innerHTML='<div class="box"><h2>Списки</h2><p class="muted">Можно добавлять, редактировать и архивировать позиции. Архив не удаляет историю.</p>'+
+ (!flavorCatalogLoaded?'<p class="muted">Загружаем справочники…</p>':'')+
+ '<div class="list">'+sections.map(section=>{
+  const all=(LIST_CATALOG[section.key]||[]),active=all.filter(x=>x.active);
+  const rows=section.key==='flavors'
+   ?[...new Set(active.map(x=>x.brand))].sort((a,b)=>a.localeCompare(b,'ru')).map(brand=>'<details class="flavor-group"><summary>'+esc(brand)+' · '+active.filter(x=>x.brand===brand).length+'</summary>'+
+   '<div class="catalog-list">'+active.filter(x=>x.brand===brand).map(x=>catalogEditRow(section.key,x)).join('')+'</div></details>').join('')
+   :'<div class="catalog-list">'+active.map(x=>catalogEditRow(section.key,x)).join('')+'</div>';
+  const archived=all.filter(x=>!x.active);
+  return '<details class="flavor-group"><summary>'+esc(section.label)+' · '+active.length+'</summary>'+
+  '<div class="actions" style="justify-content:flex-start"><button class="smallaction" data-add-list="'+section.key+'">+ Добавить</button></div>'+rows+
+  (archived.length?'<details class="flavor-group"><summary>Архив · '+archived.length+'</summary><div class="catalog-list">'+archived.map(x=>catalogEditRow(section.key,x)).join('')+'</div></details>':'')+
+  '</details>';
+ }).join('')+'</div></div>';
+ root.querySelectorAll('[data-add-list]').forEach(b=>b.onclick=()=>showListEditor(b.dataset.addList,null));
+ root.querySelectorAll('[data-edit-list]').forEach(b=>b.onclick=()=>showListEditor(b.dataset.editList,b.dataset.listId));
+ root.querySelectorAll('[data-toggle-list]').forEach(b=>b.onclick=()=>{
+  const kind=b.dataset.toggleList,obj=(LIST_CATALOG[kind]||[]).find(x=>x.id===b.dataset.listId);
+  if(!obj)return;
+  appConfirm((obj.active?'Архивировать':'Восстановить')+' «'+obj.name+'»?',()=>{
+   b.disabled=true;
+   google.script.run.withSuccessHandler(()=>{obj.active=!obj.active;paint();toast('Справочник обновлён')}).withFailureHandler(err=>{b.disabled=false;toast('Ошибка: '+(err.message||err))}).crListsSetActive(kind,obj.id,!obj.active);
+  });
+ });
+}
+if(tab==='guests'){
+ const ordered=REMOTE_GUESTS.slice();
+ root.innerHTML='<div class="box"><div class="sectionhead"><h2>База гостей · '+REMOTE_GUESTS.length+'</h2><button class="primary" id="guest-add-new">+ Новый гость</button></div>'+
+ '<div class="formgrid"><label>Поиск по имени или телефону<input id="guests-search" placeholder="Имя или телефон" autocomplete="off"></label>'+
+ '<label>Сортировка<select id="guests-sort"><option value="newest">По дате добавления · новые сверху</option><option value="oldest">По дате добавления · старые сверху</option><option value="az">По алфавиту · А–Я</option><option value="za">По алфавиту · Я–А</option></select></label></div>'+
+ '<div id="guests-search-results" class="guest-directory"></div></div>'+
+ '<div class="box"><details id="test-guests-section"><summary>Тестовые гости этого браузера · '+data.guests.length+'</summary><p class="muted">Эти имена не входят в реальную базу Google Sheets. Удаление убирает только тестового гостя, а не его прежние записи в истории кальянов.</p><div id="test-guests-list"></div></details></div>';
+ const search=$('guests-search'),sort=$('guests-sort'),result=$('guests-search-results');
+ function renderGuestSearch(){
+  const query=search.value.trim().toLocaleLowerCase('ru'),digits=query.replace(/\D/g,'');
+  const found=ordered.filter(g=>!query||g.name.toLocaleLowerCase('ru').includes(query)||(digits.length>2&&String(g.phone||'').replace(/\D/g,'').includes(digits)));
+  found.sort((a,b)=>sort.value==='az'?a.name.localeCompare(b.name,'ru'):sort.value==='za'?b.name.localeCompare(a.name,'ru'):sort.value==='oldest'?String(a.createdAt||'').localeCompare(String(b.createdAt||'')):String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+  result.innerHTML=found.slice(0,100).map(g=>'<button type="button" class="guest-directory-row" data-guest-id="'+esc(g.id)+'"><div class="guest-directory-info"><strong>'+esc(g.name)+'</strong>'+
+ '<div class="guest-directory-facts"><span>Телефон: '+esc(g.phone||'—')+'</span><span>Категория: '+esc(g.category||'—')+'</span>'+
+ '<span>Дата рождения: '+esc(g.birthday||'—')+'</span><span>Добавлен: '+esc(guestDateText(g.createdAt))+'</span>'+
+ '<span>Источник: '+esc(g.source||'—')+'</span></div>'+
+ (g.comment?'<div class="guest-directory-comment">Комментарий: '+esc(g.comment)+'</div>':'')+
+ '</div><span class="guest-row-arrow">›</span></button>').join('')||'<div class="empty">Гости не найдены</div>';
+  if(found.length>100)result.innerHTML+='<div class="muted">Показаны первые 100 записей. Уточни поиск.</div>';
+  result.querySelectorAll('[data-guest-id]').forEach(b=>b.onclick=()=>showGuestCard(b.dataset.guestId));
+ }
+ search.addEventListener('input',renderGuestSearch);sort.addEventListener('change',renderGuestSearch);renderGuestSearch();
+ $('guest-add-new').onclick=()=>showGuestEditor(null);
+ const testList=$('test-guests-list');
+ testList.innerHTML=data.guests.length?data.guests.slice().sort((a,b)=>a.name.localeCompare(b.name,'ru')).map(g=>'<div class="catalog-edit-row"><strong>'+esc(g.name)+'</strong><button type="button" class="smallaction danger" data-delete-test-guest="'+esc(g.id)+'">Удалить</button></div>').join(''):'<div class="muted">Тестовых гостей нет</div>';
+ testList.querySelectorAll('[data-delete-test-guest]').forEach(b=>b.onclick=()=>{
+  const g=data.guests.find(x=>x.id===b.dataset.deleteTestGuest);if(!g)return;
+  appConfirm('Удалить тестового гостя «'+g.name+'»? Реальная база не изменится. Записи кальянов останутся.',()=>{
+   data.guests=data.guests.filter(x=>x.id!==g.id);save();paint();toast('Тестовый гость удалён');
+  });
+ });
+}
+if(tab==='system'){
+ root.innerHTML='<div class="box"><h2>Общая смена · управление</h2>'+
+ '<p class="muted">Одна общая смена для всех устройств. Данные карты, кальянов, VIP, бронирований и мойки хранятся в серверном состоянии смены.</p>'+
+ '<div class="item"><span>Статус смены</span><strong id="shared-shift-status">Проверяем…</strong></div>'+
+ '<div id="shared-shift-actions"></div>'+
+ '<div class="actions"><button type="button" id="refresh-shared-shift">Обновить с сервера</button><button type="button" id="open-main-shift">Перейти к схеме зала</button></div>'+
+ '<p class="muted" id="shared-shift-details"></p></div>'+
+ '<div class="box"><h2>Резервные тестовые данные</h2><p class="muted">Старый тестовый набор в браузере сохранён отдельно. Он не переносится в общую смену автоматически.</p>'+
+ '<button id="check">Проверить сервер</button><p id="server-result" class="muted"></p></div>';
+ $('check').onclick=()=>health();
+ $('open-main-shift').onclick=()=>{tab='shifts';paint()};
+ let currentShared=null,sharedPending=false;
+ const status=$('shared-shift-status'),details=$('shared-shift-details'),actions=$('shared-shift-actions');
+ function sharedError(error){
+  sharedPending=false;status.textContent='Ошибка';details.textContent=String(error?.message||error);
+  renderSharedControls();toast('Ошибка сервера');
+ }
+ function renderSharedControls(){
+  if(sharedPending){actions.innerHTML='<p class="muted">Ждём ответа сервера…</p>';return}
+  if(currentShared){
+   actions.innerHTML='<div class="actions"><button type="button" class="danger" id="close-shared-shift">Закрыть общую смену</button></div>';
+   $('close-shared-shift').onclick=()=>appConfirm('Закрыть общую смену '+displayDate(currentShared.day)+'?',()=>{
+    if(sharedPending)return;
+    if(syncDirty||syncBusy||syncMode==='offline'||syncMode==='conflict')return toast('Есть несохранённые изменения. Закрытие запрещено');
+    sharedPending=true;renderSharedControls();
+    google.script.run.withSuccessHandler(()=>{sharedPending=false;toast('Смена закрыта');initLiveShift();refreshSharedShift()}).withFailureHandler(sharedError).crLiveCloseShift(currentShared.id);
+   });
+  }else{
+   actions.innerHTML='<form id="shared-shift-form"><div class="formgrid">'+
+    '<label>Дата смены<input name="day" type="date" required value="'+localDay()+'"></label>'+
+    '<label>Официант<input name="waiter" maxlength="120" placeholder="Официант"></label></div>'+
+    '<div class="actions"><button type="submit" class="primary">Открыть общую смену</button></div></form>';
+   $('shared-shift-form').onsubmit=e=>{
+    e.preventDefault();if(sharedPending)return;
+    const f=new FormData(e.currentTarget),day=String(f.get('day')||''),waiter=String(f.get('waiter')||'').trim();
+    appConfirm('Открыть общую смену '+displayDate(day)+' в Google Таблице?',()=>{
+     if(sharedPending)return;sharedPending=true;renderSharedControls();
+     google.script.run.withSuccessHandler(()=>{sharedPending=false;toast('Смена открыта');initLiveShift();refreshSharedShift()}).withFailureHandler(sharedError).crLiveOpenShift({day,waiter});
+    });
+   };
+  }
+ }
+ function refreshSharedShift(){
+  if(sharedPending)return;status.textContent='Проверяем…';
+  google.script.run.withSuccessHandler(result=>{
+   if(tab!=='system')return;
+   currentShared=result?.shift||null;
+   status.textContent=currentShared?'Открыта · '+displayDate(currentShared.day):'Нет открытой смены';
+   details.textContent=currentShared?'ID: '+currentShared.id+' · официант: '+(currentShared.waiter||'—')+
+    ' · открой «Текущая смена» для работы':'Создай смену, затем открой схему зала.';
+   renderSharedControls();
+  }).withFailureHandler(sharedError).crLiveGetCurrentShift();
+ }
+ $('refresh-shared-shift').onclick=()=>{if(syncDirty)return toast('Есть неотправленные изменения');refreshSharedShift()};
+ refreshSharedShift();
+}
+}
+function health(){
+ google.script.run.withSuccessHandler(result=>{
+  lastServerOK=Date.now();renderSyncStatus();
+  const e=$('server-result');if(e)e.textContent='Проверка OK · '+result.version;
+ }).withFailureHandler(error=>{
+  syncError=String(error.message||error);
+  if(syncMode==='shared')syncMode='offline';
+  renderSyncStatus();
+  const e=$('server-result');if(e)e.textContent=syncError;
+ }).crWebTestHealth();
+}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;paint()});
+// Common clear controls for all editable text, numeric, date/time and textarea inputs.
+// Wrapped after rendering; listener delegation also supports dynamically added flavor fields.
+// Touch-friendly searchable menus. Values still save in the existing order fields.
+let catalogPopup=null,catalogOwner=null;
+function catalogValues(kind){
+ if(kind==='guests')return [...new Set(REMOTE_GUESTS.map(x=>String(x.name||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ru'));
+ return (LIST_CATALOG[kind]||[]).filter(x=>x.active).map(x=>
+  kind==='flavors'?String(x.brand)+' '+String(x.name):kind==='prices'?String(x.amount):String(x.name));
+}
+function closeCatalogMenu(){if(catalogPopup){catalogPopup.remove();catalogPopup=null;catalogOwner=null}}
+function showCatalogMenu(input){
+ const kind=input.dataset.catalog;if(!kind)return;
+ if(catalogOwner!==input){closeCatalogMenu();catalogPopup=document.createElement('div');catalogPopup.className='catalog-popup';catalogPopup.setAttribute('role','listbox');document.body.append(catalogPopup);catalogOwner=input;}
+ const q=String(input.value||'').trim().toLocaleLowerCase('ru'),values=catalogValues(kind),hits=values.filter(x=>x.toLocaleLowerCase('ru').includes(q));
+ const rect=input.getBoundingClientRect(),width=rect.width;
+ catalogPopup.style.left=Math.max(8,rect.left)+'px';catalogPopup.style.width=Math.max(180,width)+'px';
+ const below=window.innerHeight-rect.bottom;catalogPopup.style.maxHeight=Math.max(110,Math.min(320,below>180?below-10:rect.top-12))+'px';
+ if(below>180){catalogPopup.style.top=rect.bottom+3+'px';catalogPopup.style.bottom='auto'}else{catalogPopup.style.top='auto';catalogPopup.style.bottom=(window.innerHeight-rect.top+3)+'px'}
+ catalogPopup.innerHTML=(hits.length?hits.slice(0,90).map(v=>'<button type="button" role="option" class="catalog-item">'+esc(v)+'</button>').join(''):'<div class="catalog-empty">'+(values.length?'Совпадений нет':'Справочник ещё не загружен')+'</div>');
+ [...catalogPopup.querySelectorAll('.catalog-item')].forEach((button,i)=>button.onclick=()=>{
+  input.value=hits[i];input.dispatchEvent(new Event('input',{bubbles:true}));
+  input.dispatchEvent(new Event('change',{bubbles:true}));closeCatalogMenu();
+ });
+}
+function setupCatalogMenus(){
+ document.addEventListener('focusin',e=>{if(e.target.matches?.('input[data-catalog]'))showCatalogMenu(e.target)});
+ document.addEventListener('input',e=>{if(e.target.matches?.('input[data-catalog]'))showCatalogMenu(e.target)});
+ document.addEventListener('pointerdown',e=>{
+  const arrow=e.target.closest?.('.catalog-arrow');
+  if(arrow){e.preventDefault();const input=arrow.parentElement.querySelector('input[data-catalog]');if(input){if(catalogOwner===input)closeCatalogMenu();else{input.focus();showCatalogMenu(input)}}return}
+  if(catalogPopup&&!e.target.closest?.('.catalog-popup')&&!e.target.matches?.('input[data-catalog]'))closeCatalogMenu();
+ },true);
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeCatalogMenu()});
+ document.addEventListener('scroll',()=>{if(catalogOwner)showCatalogMenu(catalogOwner)},true);
+}
+function setupClearControls(){
+ const eligible=el=>el.matches('input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]),textarea,select')&&!el.readOnly&&!el.disabled;
+ function sync(el){
+  const wrapper=el.parentElement;if(!wrapper?.classList.contains('clearable-field'))return;
+  const btn=wrapper.querySelector(':scope > .field-clear');if(btn)btn.hidden=false;
+ }
+ function decorate(){
+  document.querySelectorAll('input,textarea,select').forEach(el=>{
+   if(!eligible(el)||el.parentElement?.classList.contains('clearable-field'))return;
+   const wrapper=document.createElement('span');
+   wrapper.className='clearable-field'+((['date','datetime-local','time','month','week'].includes(el.type)||el.tagName==='SELECT')?' has-picker':'');
+   el.before(wrapper);wrapper.append(el);
+   const btn=document.createElement('button');btn.type='button';btn.className='field-clear';
+   btn.setAttribute('aria-label','Очистить поле');btn.setAttribute('title','Очистить поле');
+   btn.textContent='×';wrapper.append(btn);
+   if(el.dataset.catalog){wrapper.classList.add('has-catalog');const arrow=document.createElement('button');arrow.type='button';arrow.className='catalog-arrow';arrow.setAttribute('aria-label','Показать список');arrow.textContent='⌄';wrapper.append(arrow);}
+   sync(el);
+  });
+ }
+ document.addEventListener('input',e=>{if(e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement)sync(e.target)},true);
+ document.addEventListener('change',e=>{if(e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement)sync(e.target)},true);
+ document.addEventListener('click',e=>{
+  const btn=e.target.closest?.('.field-clear');if(!btn)return;
+  e.preventDefault();e.stopPropagation();
+  const el=btn.parentElement.querySelector('input,textarea,select');if(!el)return;
+  if(el.tagName==='SELECT')el.selectedIndex=-1;else el.value='';
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true}));
+  sync(el);
+ },true);
+ // Prevent mobile Safari from stealing focus and invoking the date/time picker.
+ document.addEventListener('pointerdown',e=>{if(e.target.closest?.('.field-clear'))e.preventDefault()},true);
+ const observer=new MutationObserver(entries=>{
+  if(entries.some(e=>e.addedNodes.length))decorate();
+ });
+ observer.observe(document.body,{childList:true,subtree:true});
+ decorate();
+}
+function updateHeaderClock(){const el=$('header-clock');if(el)el.textContent=new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}updateHeaderClock();setInterval(updateHeaderClock,1000);
+load();demoData=JSON.parse(JSON.stringify(data));initLiveShift();health();loadFlavorCatalog();loadRemoteGuests();setupClearControls();setupCatalogMenus();
+</script></body></html>
