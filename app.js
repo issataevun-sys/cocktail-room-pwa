@@ -37,7 +37,7 @@ async function offlineDiagnostics(){
   const reg=await navigator.serviceWorker?.getRegistration('./');
   workerReady=!!reg?.active;
   if(workerReady&&'caches' in window){
-   const cache=await caches.open('cocktail-room-shell-v13');
+   const cache=await caches.open('cocktail-room-shell-v14');
    const assets=['./index.html','./app.js','./db.js','./shifts-ui.js','./styles.css','./manifest.webmanifest','./icon.svg','./work.html','./pwa-work-client.js','./secure-work-store.js'];
    cacheReady=(await Promise.all(assets.map(path=>cache.match(path)))).every(Boolean);
   }
@@ -188,4 +188,16 @@ if(view==='sync'){const q=await all('outbox');root.innerHTML='<div class="panel"
 }
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{view=b.dataset.view;render().catch(console.error)});window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();installEvent=event;if(view==='install')render().catch(console.error)});
 window.addEventListener('appinstalled',()=>{installEvent=null;if(view==='install')render().catch(console.error)});
-window.addEventListener('online',status);window.addEventListener('offline',status);if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(console.error);render().catch(err=>{$('#content').textContent='Ошибка локальной базы: '+err.message});
+window.addEventListener('online',status);window.addEventListener('offline',status);
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(console.error);
+(async()=>{
+ const saved=localStorage.getItem('cr-pwa-work-url')||'';
+ const url=checkOwnerAppUrl(saved);
+ if(url){
+  if(navigator.onLine){window.location.replace(url);return}
+  try{
+   if(await window.CRWorkStore?.hasSnapshot?.()){window.location.replace('./work.html');return}
+  }catch(e){console.error('Offline snapshot check failed',e)}
+ }
+ render().catch(err=>{$('#content').textContent='Ошибка локальной базы: '+err.message});
+})();
