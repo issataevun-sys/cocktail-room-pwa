@@ -1,7 +1,7 @@
-const CACHE='cocktail-room-shell-v6';
+const CACHE='cocktail-room-shell-v8';
 const PREFIX='cocktail-room-shell-';
-const ASSETS=['./','./index.html','./styles.css','./app.js','./db.js','./shifts-ui.js','./manifest.webmanifest','./icon.svg'];
-const FILES=new Set(['','index.html','styles.css','app.js','db.js','shifts-ui.js','manifest.webmanifest','icon.svg']);
+const ASSETS=['./','./index.html','./styles.css','./app.js','./db.js','./shifts-ui.js','./manifest.webmanifest','./icon.svg','./work.html','./pwa-work-client.js'];
+const FILES=new Set(['','index.html','styles.css','app.js','db.js','shifts-ui.js','manifest.webmanifest','icon.svg','work.html','pwa-work-client.js']);
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });
