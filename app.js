@@ -27,7 +27,7 @@ async function offlineDiagnostics(){
   const reg=await navigator.serviceWorker?.getRegistration('./');
   workerReady=!!reg?.active;
   if(workerReady&&'caches' in window){
-   const cache=await caches.open('cocktail-room-shell-v4');
+   const cache=await caches.open('cocktail-room-shell-v5');
    const assets=['./index.html','./app.js','./db.js','./shifts-ui.js','./styles.css','./manifest.webmanifest','./icon.svg'];
    cacheReady=(await Promise.all(assets.map(path=>cache.match(path)))).every(Boolean);
   }
