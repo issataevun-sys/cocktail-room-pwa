@@ -1,4 +1,4 @@
-const CACHE='cocktail-room-shell-v3';
+const CACHE='cocktail-room-shell-v4';
 const PREFIX='cocktail-room-shell-';
 const ASSETS=['./','./index.html','./styles.css','./app.js','./db.js','./shifts-ui.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>{
