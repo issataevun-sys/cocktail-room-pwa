@@ -17,6 +17,12 @@
  '<div id="cr-local-preview" style="font-size:12px;color:#5a6c77;margin-top:9px"></div>'+
  '<button id="cr-continue-offline" disabled style="margin-top:10px;padding:10px 12px">Продолжить сохранённую смену офлайн</button></div>'+
  '<p style="font-size:12px;color:#7c8892;margin-top:15px">Офлайн-режим доступен после шифрованного сохранения смены. Изменения отправляются через Google после восстановления связи.</p></div>';
+ const toolbar=document.createElement('div');
+ toolbar.id='cr-offline-toolbar';
+ toolbar.style.cssText='display:none;position:fixed;z-index:9900;top:10px;left:50%;transform:translateX(-50%);background:#16252c;color:white;padding:9px 12px;border-radius:12px;box-shadow:0 4px 20px #0004;font:12px Arial,sans-serif;align-items:center;gap:10px';
+ toolbar.innerHTML='<span id="cr-local-status">Офлайн · изменения на устройстве</span>'+
+ '<button id="cr-save-local" style="padding:7px 9px;border-radius:6px">Сохранить локально</button>'+
+ '<button id="cr-reconnect" style="padding:7px 9px;border-radius:6px">Подключить Google</button>';
  let nonce='',peer=null,peerOrigin='',popup=null,ready=false,connected=false,lastHeartbeat=0;
  const queue=[],pending=new Map();
  let snapshotProvider=null,restoreSnapshot=null,onConnected=null,saveTimer=null,offlineEditing=false,unlockedSnapshot=null;
@@ -38,7 +44,7 @@
   if(msg.type==='ready'){
    peer=event.source;peerOrigin=event.origin;lastHeartbeat=Date.now();ready=true;
    if(!connected){
-    connected=true;offlineEditing=false;window.CRPWA.connected=true;overlay.style.display='none';
+    connected=true;offlineEditing=false;window.CRPWA.connected=true;overlay.style.display='none';toolbar.style.display='none';
     while(queue.length){const job=queue.shift();dispatch(job)}
     if(typeof onConnected==='function')try{onConnected()}catch(e){console.error(e)}
    }
@@ -74,16 +80,24 @@
   }});
  }
  window.google={script:{run:runner(null,null)}};
+ async function persistNow(){
+  if(!snapshotProvider||!window.CRWorkStore?.isUnlocked())return false;
+  clearTimeout(saveTimer);
+  const data=snapshotProvider();
+  if(!data?.state)return false;
+  await window.CRWorkStore.save(data);
+  unlockedSnapshot=data;return true;
+ }
  function scheduleEncryptedSnapshot(){
   if(!snapshotProvider||!window.CRWorkStore?.isUnlocked())return;
   clearTimeout(saveTimer);saveTimer=setTimeout(async()=>{
-   try{const data=snapshotProvider();if(data?.state){await window.CRWorkStore.save(data);unlockedSnapshot=data}}
+   try{await persistNow()}
    catch(e){console.error('Encrypted copy could not be updated',e)}
   },650);
  }
  window.CRPWA={connected:false,setSnapshotProvider:fn=>{snapshotProvider=fn},
   setRestoreSnapshot:fn=>{restoreSnapshot=fn},setOnConnected:fn=>{onConnected=fn},
-  persistEncrypted:scheduleEncryptedSnapshot,isOfflineEditing:()=>offlineEditing};
+  persistEncrypted:scheduleEncryptedSnapshot,saveEncryptedNow:persistNow,isOfflineEditing:()=>offlineEditing};
  const connect=()=>{
   const url=safeUrl(document.getElementById('cr-owner-url').value);
   if(!url){gate('Проверь адрес: нужна ссылка script.google.com/macros/s/.../dev или /exec');return}
@@ -94,8 +108,14 @@
   document.getElementById('cr-gate-status').textContent='Открой окно Google и дождись подтверждения доступа…';
  };
  const start=()=>{
-  document.body.append(overlay);
+  document.body.append(overlay);document.body.append(toolbar);
   document.getElementById('cr-owner-url').value=localStorage.getItem(KEY)||'';
+  document.getElementById('cr-save-local').onclick=async()=>{
+   const label=document.getElementById('cr-local-status');label.textContent='Шифруем и сохраняем…';
+   try{await persistNow();label.textContent='Сохранено на этом устройстве · '+new Date().toLocaleTimeString('ru-RU')}
+   catch(e){label.textContent='Ошибка сохранения: '+String(e.message||e)}
+  };
+  document.getElementById('cr-reconnect').onclick=()=>gate('Для синхронизации повторно подключи Google');
   document.getElementById('cr-connect').onclick=connect;
   document.getElementById('cr-secure-cache').onclick=async()=>{
    const input=document.getElementById('cr-offline-secret'),preview=document.getElementById('cr-local-preview');
@@ -119,7 +139,7 @@
     document.getElementById('cr-gate-status').textContent='Не удалось восстановить локальную смену';return;
    }
    offlineEditing=true;connected=false;window.CRPWA.connected=false;
-   overlay.style.display='none';
+   overlay.style.display='none';toolbar.style.display='flex';
   };
  };
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
