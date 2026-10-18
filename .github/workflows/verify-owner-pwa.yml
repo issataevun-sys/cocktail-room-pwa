@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - feature/owner-test-record-cleanup-20261019
       - maintenance/single-management-release-20261019
     paths:
       - work.html

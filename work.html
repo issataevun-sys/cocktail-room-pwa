@@ -91,7 +91,7 @@ body.pilot-active .sync-top .tag{background:#f4f5f6}
 </style><meta name="theme-color" content="#171d22"><link rel="icon" href="./icon.svg" type="image/svg+xml">
 </head>
 <body>
-<div class="shell"><aside class="side"><div class="logo">COCKTAIL ROOM<small>PWA v1.2 · синхронизация устройств</small></div>
+<div class="shell"><aside class="side"><div class="logo">COCKTAIL ROOM<small>PWA v1.3 · выборочная очистка</small></div>
 <nav><button class="active" data-tab="home">Обзор</button><button data-tab="shifts">Текущая смена</button><button data-tab="past">Прошлые смены</button><button data-tab="guests">Гости</button><button data-tab="lists">Списки</button><button data-tab="system">Система</button></nav>
 <div class="sidefoot">Режим владельца · зашифрованная локальная копия<br>Синхронизация при наличии интернета</div></aside>
 <main><header><div><div class="sub">COCKTAIL ROOM / OWNER</div><h1 id="title">Обзор</h1></div><div class="header-meta"><time id="header-clock">--:--</time><span class="pill" id="server">Проверка…</span></div></header>
@@ -1202,6 +1202,61 @@ function pilotPastRender(){
    '<p class="muted">Кальянов нет</p>')+'</div>',true);
  });
 }
+/** Owner-selected cleanup. No labels, names, or dates are used to guess what is a test. */
+function showPilotCleanup(){
+ if(!window.CRPilot?.isActive())return toast('Сначала подключи смену владельца');
+ const candidates={
+  shifts:(data.shifts||[]).filter(x=>x.status==='closed'),
+  orders:data.hookahs||[],
+  bookings:data.bookings||[],
+  guests:[...new Map([...(REMOTE_GUESTS||[]),...(data.guests||[])].filter(x=>x&&x.id).map(g=>[g.id,g])).values()]
+ };
+ const group=(title,key,rows,describe)=>'<details style="border:1px solid #e0e4e6;border-radius:9px;padding:10px;margin:10px 0"'+
+  (key==='shifts'?' open':'')+'><summary><strong>'+esc(title)+' ('+rows.length+')</strong></summary>'+
+  '<div style="max-height:220px;overflow:auto;padding-top:9px">'+
+  (rows.map(x=>'<label style="display:flex;gap:9px;padding:7px 0;align-items:flex-start;border-bottom:1px solid #eee">'+
+   '<input type="checkbox" data-clean-type="'+key+'" value="'+esc(x.id)+'" style="flex:none;margin-top:3px">'+
+   '<span>'+esc(describe(x))+'</span></label>').join('')||'<span class="muted">Нет записей</span>')+
+  '</div></details>';
+ modal('<div class="modal-head"><h2>Очистка тестовых записей</h2><button class="modal-close" data-close-modal>×</button></div>'+
+  '<p class="muted">Выдели только те записи, которые точно являются тестовыми. Ничего не отмечено автоматически. Открытые смены удалять нельзя.</p>'+
+  group('Закрытые смены','shiftIds',candidates.shifts,x=>
+   displayDate(x.day)+' · '+(x.waiter||'Без официанта')+
+   ' · кальянов '+(data.hookahs||[]).filter(o=>o.shiftId===x.id).length)+
+  group('Кальяны','orderIds',candidates.orders,x=>
+   'Стол '+(x.table||'—')+' · '+(x.guest||'Без имени')+' · '+fmt(x.price)+' ₸ · '+
+   displayDate((data.shifts||[]).find(z=>z.id===x.shiftId)?.day||''))+
+  group('Брони','bookingIds',candidates.bookings,x=>
+   displayDate(x.day||'')+' '+(x.time||'')+' · '+(x.guest||x.guestName||x.name||'Без имени'))+
+  group('Гости','guestIds',candidates.guests,x=>x.name||'Без имени')+
+  '<p class="muted">При удалении закрытой смены также удалятся её кальяны, открытые столы, VIP и мойка. Брони без привязки к смене нужно выбирать отдельно. Перед первой очисткой сохранится зашифрованная резервная копия.</p>'+
+  '<p id="pilot-cleanup-status" class="muted"></p>'+
+  '<div class="actions"><button type="button" data-close-modal>Отмена</button>'+
+  '<button type="button" class="danger" id="pilot-cleanup-delete">Удалить выбранное</button></div>',true);
+ $('pilot-cleanup-delete').onclick=()=>{
+  const chosen=key=>Array.from(document.querySelectorAll('input[data-clean-type="'+key+'"]:checked')).map(x=>x.value);
+  const selection={shiftIds:chosen('shiftIds'),orderIds:chosen('orderIds'),
+   bookingIds:chosen('bookingIds'),guestIds:chosen('guestIds')};
+  const n=Object.values(selection).reduce((a,items)=>a+items.length,0);
+  if(!n)return $('pilot-cleanup-status').textContent='Сначала выбери хотя бы одну запись.';
+  appConfirm('Удалить выбранные записи ('+n+') из общей зашифрованной базы? Перед удалением будет создана резервная копия.',async()=>{
+   const btn=$('pilot-cleanup-delete'),status=$('pilot-cleanup-status');
+   if(btn)btn.disabled=true;
+   if(status)status.textContent='Проверяем сервер и сохраняем резервную копию…';
+   try{
+    const result=await window.CRPilot.cleanupSelected(selection);
+    const removed=result.removed;
+    closeModal();tab='system';paint();
+    toast('Удалено локально: смен '+removed.shifts+', кальянов '+removed.hookahs+
+     ', броней '+removed.bookings+', гостей '+removed.guests+'. Ожидаем синхронизацию.');
+   }catch(error){
+    const label=$('pilot-cleanup-status');
+    if(label)label.textContent='Очистка отменена: '+String(error?.message||error);
+    const button=$('pilot-cleanup-delete');if(button)button.disabled=false;
+   }
+  });
+ };
+}
 function paint(){
 document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
 $('title').textContent=({home:'Обзор',shifts:'Текущая смена',past:'Прошлые смены',guests:'Гости',lists:'Списки',system:'Система'})[tab];
@@ -1364,6 +1419,10 @@ if(tab==='system'){
     window.CRPilot?.openShift({day:String(fd.get('day')||''),waiter:String(fd.get('waiter')||'')});
    };
   }
+  area.insertAdjacentHTML('beforeend','<div style="border-top:1px solid #e0e4e6;margin-top:14px;padding-top:12px">'+
+   '<button type="button" class="danger" id="pilot-cleanup-open">Очистить тестовые записи…</button>'+ 
+   '<p class="muted">Только ручной выбор, перед удалением создаётся резервная копия.</p></div>');
+  $('pilot-cleanup-open').onclick=showPilotCleanup;
   return;
  }
  root.innerHTML='<div class="box"><h2>Общая смена · управление</h2>'+
