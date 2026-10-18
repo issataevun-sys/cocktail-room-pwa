@@ -51,7 +51,7 @@
   return saveNamed('snapshot',payload);
  }
  async function saveNamed(name,payload){
-  if(!['snapshot','pilot-work','pilot-config'].includes(name))throw new Error('Недопустимый ключ локального хранения');
+  if(!['snapshot','pilot-work','pilot-config','pilot-precleanup'].includes(name))throw new Error('Недопустимый ключ локального хранения');
   if(!key||!salt)throw new Error('Локальное шифрование не разблокировано');
   if(!payload||typeof payload!=='object')throw new Error('Invalid snapshot');
   const frozen=JSON.stringify(payload),currentKey=key,currentSalt=bytes(salt);
@@ -65,7 +65,7 @@
   return writeQueue;
  }
  async function loadNamed(name){
-  if(!['snapshot','pilot-work','pilot-config'].includes(name))throw new Error('Недопустимый ключ локального хранения');
+  if(!['snapshot','pilot-work','pilot-config','pilot-precleanup'].includes(name))throw new Error('Недопустимый ключ локального хранения');
   if(!key)throw new Error('Сначала разблокируй защищённое хранилище');
   const record=await read(name);
   if(!record)return null;
