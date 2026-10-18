@@ -6,6 +6,7 @@ on:
       - index.html
       - connectivity-test.html
       - transport-test.html
+      - secure-sync-test.html
       - app.js
       - work.html
       - pwa-work-client.js
@@ -37,7 +38,7 @@ jobs:
       - name: Prepare static-only site
         run: |
           mkdir -p public
-          cp index.html app.js db.js shifts-ui.js styles.css sw.js manifest.webmanifest icon.svg work.html pwa-work-client.js secure-work-store.js connectivity-test.html transport-test.html public/
+          cp index.html app.js db.js shifts-ui.js styles.css sw.js manifest.webmanifest icon.svg work.html pwa-work-client.js secure-work-store.js connectivity-test.html transport-test.html secure-sync-test.html public/
           touch public/.nojekyll
       - name: Configure Pages
         uses: actions/configure-pages@v5
