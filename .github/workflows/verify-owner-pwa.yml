@@ -4,6 +4,7 @@ on:
     branches:
       - main
       - feature/shift-history-workflow-20261018
+      - fix/offline-close-outbox-20261018
     paths:
       - work.html
       - pwa-owner-sync.js
