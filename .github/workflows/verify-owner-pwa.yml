@@ -14,6 +14,7 @@ on:
       - sw.js
       - manifest.webmanifest
       - index.html
+      - .github/workflows/pwa-pages.yml
       - tests/**
       - .github/workflows/verify-owner-pwa.yml
   workflow_dispatch:
@@ -32,3 +33,4 @@ jobs:
           node tests/smoke.cjs
           node tests/owner-sync.cjs
           node tests/two-device.cjs
+          node tests/production-layout.cjs
