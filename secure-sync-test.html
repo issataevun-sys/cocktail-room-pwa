@@ -23,7 +23,7 @@ small{color:#51626c;line-height:1.4}.warn{background:#fff6e8;padding:12px;border
 <button id="send">Зашифровать → отправить → получить подтверждение → прочитать</button>
 <button id="load" class="secondary">Только прочитать тестовые данные сервера</button>
 <pre id="log">Ожидаем запуска. Для этого теста секрет не сохраняется в браузере.</pre>
-<small>Google Sheets не затрагивается. Данные хранятся в CacheService не более 20 минут, могут исчезнуть раньше. При закрытии страницы секрет потребуется ввести заново. Запрос POST подтверждается отдельным серверным чтением.</small>
+<small>Google Sheets не затрагивается. Зашифрованные тестовые данные сохраняются в Script Properties и остаются после перезапуска браузера. Это тестовое, ограниченное по размеру хранилище — не база реальных смен. Секрет потребуется ввести заново. POST подтверждается отдельным серверным чтением.</small>
 </main><script>
 'use strict';
 const el=id=>document.getElementById(id);
@@ -116,8 +116,8 @@ async function start(which){
   print('Проверяем отдельный сервер...');
   const ping=new URL(u.href);ping.searchParams.set('op','ping');
   const pong=await jsonp(ping);
-  if(pong?.version!=='cr-secure-stage-v1')throw new Error('Необходимо обновить тестовый Apps Script до SecureStagingSync.gs');
-  print('✓ Сервер готов; публичный ключ в GitHub НЕ размещался.');
+  if(pong?.version!=='cr-secure-stage-v2')throw new Error('Необходимо обновить тестовый Apps Script полным SecureStagingSync.gs v2 из GitHub и развернуть новую версию');
+  print('✓ Сервер v2 готов; секрет сопряжения в GitHub НЕ размещался.');
   const before=await loadState(keys,u);
   print('✓ Авторизованное чтение работает. Версия: '+before.revision);
   if(which==='load'){
@@ -149,8 +149,16 @@ async function start(which){
   const clear=await decrypt(keys,after);
   if(clear!==sample)throw new Error('Расшифрованный текст не совпал. Проверка не пройдена.');
   print('✓ Получен зашифрованный ответ, AES-GCM проверена, данные совпали.');
-  print('РЕЗУЛЬТАТ: авторизованный двусторонний тестовый канал работает без Google Cloud.');
-  print('Это ещё НЕ синхронизация реальных смен: пока нет постоянной базы, ролей и отзыва устройств.');
+  print('Проверяем защиту от повторной отправки той же операции...');
+  await fetch(u.href,{method:'POST',mode:'no-cors',credentials:'omit',body:payload});
+  const again=await pollAck(keys,u,operationId);
+  const final=await loadState(keys,u);
+  if(!again||again.revision!==receipt.revision||final.revision!==receipt.revision)
+    throw new Error('Повторный запрос изменил версию — проверка защиты от дублей провалена');
+  print('✓ Повторный POST не создал новую версию — дубли заблокированы.');
+  print('✓ Тестовые данные сохранены в постоянном хранилище Script Properties.');
+  print('РЕЗУЛЬТАТ: защищённый обмен и повторная отправка работают без Google Cloud.');
+  print('Это НЕ синхронизация рабочих смен. Нужны права сотрудников, устройства и постоянная база для реальных записей.');
  }catch(e){print('✕ '+String(e?.message||e))}
  finally{busy=false;el('send').disabled=false;el('load').disabled=false}
 }
