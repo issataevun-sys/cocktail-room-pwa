@@ -109,7 +109,10 @@ function save(){
   syncDirty++;
   const pending={shiftId:syncShiftId,revision:syncRevision,state:data};
   pending.baseState=syncBaseState;
-  if(window.CRWorkStore?.isUnlocked())window.CRPWA.persistEncrypted();
+  if(window.CRWorkStore?.isUnlocked())window.CRPWA.saveEncryptedNow().catch(error=>{
+   syncError='Не удалось сохранить локальные изменения: '+String(error.message||error);
+   renderSyncStatus();
+  });
   if(syncMode==='shared')scheduleSync();
   renderSyncStatus();
  }else if(syncMode==='demo'){/* Public PWA never persists real guest data unencrypted. */}
