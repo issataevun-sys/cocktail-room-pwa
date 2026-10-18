@@ -118,7 +118,9 @@
  }
  window.CRPWA={connected:false,setSnapshotProvider:fn=>{snapshotProvider=fn},
   setRestoreSnapshot:fn=>{restoreSnapshot=fn},setOnConnected:fn=>{onConnected=fn},
-  persistEncrypted:scheduleEncryptedSnapshot,saveEncryptedNow:persistNow,isOfflineEditing:()=>offlineEditing};
+  persistEncrypted:scheduleEncryptedSnapshot,saveEncryptedNow:persistNow,isOfflineEditing:()=>offlineEditing,
+  enterPilotMode:()=>{offlineEditing=true;connected=false;window.CRPWA.connected=false;
+   overlay.style.display='none';toolbar.style.display='none';enableOffline.style.display='none';}};
  const connect=()=>{
   const url=safeUrl(document.getElementById('cr-owner-url').value);
   if(!url){gate('Проверь адрес: нужна ссылка script.google.com/macros/s/.../dev или /exec');return}
@@ -203,12 +205,12 @@
  };
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
  document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='hidden'&&window.CRWorkStore?.isUnlocked()){
+  if(document.visibilityState==='hidden'&&!window.CRPilot?.isActive()&&window.CRWorkStore?.isUnlocked()){
    persistNow().catch(error=>console.error('Не удалось сохранить зашифрованную смену при сворачивании',error));
   }
  });
  window.addEventListener('pagehide',()=>{
-  if(window.CRWorkStore?.isUnlocked()){
+  if(!window.CRPilot?.isActive()&&window.CRWorkStore?.isUnlocked()){
    persistNow().catch(error=>console.error('Не удалось сохранить зашифрованную смену перед закрытием',error));
   }
  });
@@ -216,6 +218,7 @@
   if(!offlineEditing)gate('Нет интернета. Открой зашифрованную копию, если она была сохранена.');
  });
  window.addEventListener('online',()=>{
+  if(window.CRPilot?.isActive()){window.CRPilot.refresh();return;}
   if(offlineEditing){
    persistNow().catch(error=>console.error('Не удалось сохранить изменения перед подключением',error));
    gate('Интернет восстановлен. Подключи Google для безопасной сверки изменений.');
