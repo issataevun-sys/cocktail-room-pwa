@@ -25,4 +25,6 @@ jobs:
         with:
           node-version: '22'
       - name: Validate JavaScript and offline shift workflow
-        run: node tests/smoke.cjs
+        run: |
+          node tests/smoke.cjs
+          node tests/owner-sync.cjs
