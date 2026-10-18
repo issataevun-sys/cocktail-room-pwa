@@ -30,6 +30,7 @@
   if(url.protocol!=='https:'||url.hostname!=='script.google.com'||
     !/^\/macros\/s\/[A-Za-z0-9_-]+\/exec\/?$/.test(url.pathname))
     throw Error('Нужна ссылка защищённого Apps Script /exec');
+  url.searchParams.set('pwa','1');
   return url;
  }
  async function create(config){
