@@ -17,4 +17,11 @@ document.getElementById('check').onclick=async()=>{
  out.textContent=JSON.stringify({httpStatus:r.status,response:body},null,2);
  }catch(e){out.textContent='Невозможно прочитать ответ: '+String(e.message||e)+'\nВозможны ограничения CORS, авторизации или сети.'}
 };
+
+// Optional URL-only prefill: deployment URL stays out of public source code.
+const server=new URLSearchParams(location.search).get('server');
+if(server){
+ document.getElementById('url').value=server;
+ document.getElementById('check').click();
+}
 </script></body></html>
