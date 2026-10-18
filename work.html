@@ -86,6 +86,8 @@ input::placeholder,textarea::placeholder{color:#949ea6;opacity:1;font-weight:400
 #pilot-open input[name="waiter"]{font-weight:400}
 #pilot-open .clearable-field{display:block}
 #pilot-open button.primary{margin-top:12px}
+body.pilot-active #work-mode-notice{display:none}
+body.pilot-active .sync-top .tag{background:#f4f5f6}
 </style><meta name="theme-color" content="#171d22"><link rel="icon" href="./icon.svg" type="image/svg+xml">
 </head>
 <body>
@@ -130,7 +132,7 @@ function renderSyncStatus(){
  const pill=$('server'),el=$('live-sync-status');
  let label='Проверка сервера…',cls='sync-pending';
  if(syncMode==='pilot'){
-  label=window.CRPilot?.label()||'Владелец · локальная смена';cls=syncError?'sync-error':syncDirty?'sync-pending':'sync-online';
+  label=window.CRPilot?.label()||'Владелец · локальная смена';cls=(!navigator.onLine||syncError)?'sync-error':syncDirty?'sync-pending':'sync-online';
  }
  else if(String(syncShiftId||'').startsWith('local-test-')){label='Локальная тестовая смена';cls='sync-pending';}
  else  if(syncMode==='conflict'||remoteRefreshAvailable){label='Конфликт изменений';cls='sync-error'}
@@ -1128,16 +1130,17 @@ function paint(){
 document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
 $('title').textContent=({home:'Обзор',shifts:'Текущая смена',past:'Прошлые смены',guests:'Гости',lists:'Списки',system:'Система'})[tab];
 const root=$('content'),active=openShift();
+ document.body.classList.toggle('pilot-active',syncMode==='pilot');
 if(tab==='past'){pastRender();return}
 if(tab==='home'){
- root.innerHTML='<div class="metrics">'+metric('Общие смены',data.shifts.length)+metric('Кальяны смены',data.hookahs.length)+metric('Гости в базе',REMOTE_GUESTS.length)+'</div>'+
- '<div class="box"><h2>Текущая общая смена</h2>'+(active?'<p><strong>'+esc(displayDate(active.day))+'</strong> · '+active.employees.map(esc).join(', ')+'</p><p class="muted">Официант: '+esc(active.waiter||'—')+'</p>':'<p class="muted">Смена не открыта</p>')+
+ root.innerHTML='<div class="metrics">'+metric('Смены',data.shifts.length)+metric('Кальяны',data.hookahs.length)+metric('Гости в базе',REMOTE_GUESTS.length)+'</div>'+
+ '<div class="box"><h2>'+(syncMode==='pilot'?'Смена владельца':'Текущая общая смена')+'</h2>'+(active?'<p><strong>'+esc(displayDate(active.day))+'</strong> · '+active.employees.map(esc).join(', ')+'</p><p class="muted">Официант: '+esc(active.waiter||'—')+'</p>':'<p class="muted">Смена не открыта</p>')+
  '<button class="primary" id="go-shifts">Перейти к сменам</button></div>';
  $('go-shifts').onclick=()=>{tab='shifts';paint()};
 }
 if(tab==='shifts'){
  const main=$('content');
- main.innerHTML='<div class="box sync-top"><div class="sectionhead"><h2>Общая смена</h2><span class="tag">Google Sheets</span></div><div id="live-sync-status"></div>'+
+ main.innerHTML='<div class="box sync-top"><div class="sectionhead"><h2>'+(syncMode==='pilot'?'Смена владельца':'Общая смена')+'</h2><span class="tag">'+(syncMode==='pilot'?'PWA · зашифровано':'Google Sheets')+'</span></div><div id="live-sync-status"></div>'+
  '<div class="actions"><button type="button" id="live-shift-refresh">Обновить с сервера</button></div></div>';
  $('live-shift-refresh').onclick=()=>{
   if(syncMode==='pilot'){window.CRPilot?.refresh();return;}
