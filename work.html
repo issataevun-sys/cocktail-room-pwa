@@ -594,7 +594,7 @@ function showGuestEditor(id){
    const normalized=entry.name.toLocaleLowerCase('ru');
    const dup=REMOTE_GUESTS.find(x=>x.id!==entry.id&&
     (String(x.name||'').trim().toLocaleLowerCase('ru')===normalized||
-    (entry.phone&&String(x.phone||'').replace(/\\D/g,'')===entry.phone.replace(/\\D/g,''))));
+    (entry.phone&&String(x.phone||'').replace(/\D/g,'')===entry.phone.replace(/\D/g,''))));
    if(dup){
     btn.disabled=false;btn.textContent='Сохранить';
     return toast('Имя или телефон уже есть у другого гостя');
