@@ -85,7 +85,7 @@
  async function reconcile(remote){
   if(!remote||!Number.isInteger(remote.revision)||remote.revision<local.revision)
    throw Error('Сервер вернул недопустимую версию');
-  if(remote.revision===local.revision)return true;
+  if(remote.revision===local.revision){lastError='';updateStatus('');return true;}
   if(!remote.state||!remote.state.state)
    throw Error('Сервер вернул неполную копию смены');
   if(!local.dirty){
