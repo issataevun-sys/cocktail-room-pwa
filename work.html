@@ -91,6 +91,8 @@ input::placeholder,textarea::placeholder{color:#949ea6;opacity:1;font-weight:400
 <div id="content"></div></main></div><div id="modal-host"></div><div id="message" role="status"></div>
 <script src="./secure-work-store.js"></script>
 <script src="./pwa-work-client.js"></script>
+<script src="./pwa-relay-transport.js"></script>
+<script src="./pwa-owner-sync.js"></script>
 <script>
 'use strict';
 const storageKey='cocktail-room-htmlservice-demo-v06';
@@ -105,22 +107,26 @@ let REMOTE_GUESTS=[],remoteGuestsLoaded=false;
 let PAST_DATA=null,PAST_LOADING=false,PAST_LAST_ERROR='',PAST_FILTERS={month:'',worker:'',issues:false,search:''},PAST_VISIBLE=60;
 function load(){try{const x=JSON.parse(sessionStorage.getItem(storageKey)||'{}');data={shifts:Array.isArray(x.shifts)?x.shifts:[],hookahs:Array.isArray(x.hookahs)?x.hookahs:[],guests:Array.isArray(x.guests)?x.guests:[],tables:Array.isArray(x.tables)?x.tables:[],bookings:Array.isArray(x.bookings)?x.bookings:[],washings:Array.isArray(x.washings)?x.washings:[],vipHours:Array.isArray(x.vipHours)?x.vipHours:[]};}catch{data={shifts:[],hookahs:[],guests:[],tables:[],bookings:[],washings:[],vipHours:[]}}}
 function save(){
- if(syncMode==='shared'||syncMode==='offline'||syncMode==='conflict'){
+ if(syncMode==='shared'||syncMode==='offline'||syncMode==='conflict'||syncMode==='pilot'){
   syncDirty++;
   const pending={shiftId:syncShiftId,revision:syncRevision,state:data};
   pending.baseState=syncBaseState;
-  if(window.CRWorkStore?.isUnlocked())window.CRPWA.saveEncryptedNow().catch(error=>{
+  if(syncMode!=='pilot'&&window.CRWorkStore?.isUnlocked())window.CRPWA.saveEncryptedNow().catch(error=>{
    syncError='Не удалось сохранить локальные изменения: '+String(error.message||error);
    renderSyncStatus();
   });
   if(syncMode==='shared')scheduleSync();
+  if(syncMode==='pilot')window.CRPilot?.onChange();
   renderSyncStatus();
  }else if(syncMode==='demo'){/* Public PWA never persists real guest data unencrypted. */}
 }
 function renderSyncStatus(){
  const pill=$('server'),el=$('live-sync-status');
  let label='Проверка сервера…',cls='sync-pending';
- if(String(syncShiftId||'').startsWith('local-test-')){label='Локальная тестовая смена';cls='sync-pending';}
+ if(syncMode==='pilot'){
+  label=window.CRPilot?.label()||'Владелец · локальная смена';cls=syncError?'sync-error':syncDirty?'sync-pending':'sync-online';
+ }
+ else if(String(syncShiftId||'').startsWith('local-test-')){label='Локальная тестовая смена';cls='sync-pending';}
  else  if(syncMode==='conflict'||remoteRefreshAvailable){label='Конфликт изменений';cls='sync-error'}
  else if(syncMode==='offline'||syncMode==='unavailable'||(typeof navigator!=='undefined'&&!navigator.onLine)){
   label='Офлайн · '+(syncDirty?'Ожидает отправки':'Сервер недоступен');cls='sync-error';
@@ -130,7 +136,9 @@ function renderSyncStatus(){
  else if(syncMode==='shared'){label='Проверка сервера…'}
  if(pill){pill.textContent=label;pill.className='pill '+cls;pill.title=lastServerOK?'Последний ответ сервера: '+new Date(lastServerOK).toLocaleTimeString('ru-RU'):'Нет подтверждённого ответа сервера'}
  if(!el)return;
- if(syncMode==='conflict'||remoteRefreshAvailable){
+ if(syncMode==='pilot'){
+  el.textContent=label+(syncError?' · '+syncError:'');
+ }else if(syncMode==='conflict'||remoteRefreshAvailable){
   el.innerHTML='<span class="sync-warning">На сервере есть другая версия смены. Локальные изменения не перезаписываются.</span>'+
    '<button type="button" class="smallaction" id="sync-review">Проверить статус</button>';
   $('sync-review').onclick=checkSharedHeartbeat;
@@ -144,6 +152,7 @@ function renderSyncStatus(){
  else el.textContent=label;
 }
 function checkSharedHeartbeat(){
+ if(syncMode==='pilot')return;
  if(serverChecking||syncBusy||syncMode==='loading')return;
  if(typeof navigator!=='undefined'&&!navigator.onLine){
   if(syncMode==='shared')syncMode='offline';
@@ -1124,7 +1133,10 @@ if(tab==='shifts'){
  const main=$('content');
  main.innerHTML='<div class="box sync-top"><div class="sectionhead"><h2>Общая смена</h2><span class="tag">Google Sheets</span></div><div id="live-sync-status"></div>'+
  '<div class="actions"><button type="button" id="live-shift-refresh">Обновить с сервера</button></div></div>';
- $('live-shift-refresh').onclick=()=>{if(syncDirty)return toast('Есть несинхронизированные изменения. Сначала отправь их.');initLiveShift()};
+ $('live-shift-refresh').onclick=()=>{
+  if(syncMode==='pilot'){window.CRPilot?.refresh();return;}
+  if(syncDirty)return toast('Есть несинхронизированные изменения. Сначала отправь их.');initLiveShift()
+ };
  if(syncMode==='conflict'||syncMode==='loading'||syncMode==='unavailable'){
   main.innerHTML+='<div class="box"><h2>'+(syncMode==='loading'?'Загрузка общей смены…':syncMode==='conflict'?'Конфликт данных':'Нет связи с сервером')+'</h2><p class="muted">'+esc(syncError||'Подключаемся к Google Sheets')+'</p>'+
    (syncMode==='conflict'?'<p>Изменения остались на этом устройстве. Для продолжения требуется сверка, автоматического перезаписывания нет.</p>':'')+'</div>';
@@ -1137,7 +1149,8 @@ if(tab==='shifts'){
  }
  if(syncMode==='offline')renderSyncStatus();
  if(!active){
-  main.innerHTML+='<div class="box">Смена отсутствует в полученном состоянии. Перезагрузи данные с сервера.</div>';
+  main.innerHTML+='<div class="box">Смена не открыта. Открой её в разделе «Система».</div><button id="create-from-shifts" type="button">Перейти в систему</button>';
+  $('create-from-shifts').onclick=()=>{tab='system';paint()};
  }else{
  const orders=data.hookahs.filter(o=>o.shiftId===active.id);
  const bookings=data.bookings.filter(b=>b.day>=localDay()||b.day===active.day).sort((a,b)=>{
@@ -1166,10 +1179,15 @@ if(tab==='shifts'){
  wireBookingList(root);
  $('shift-info').onclick=showShiftInfo;
  renderAlerts();
- $('close-shift').onclick=()=>appConfirm('Закрыть общую смену в Google Sheets? Убедись, что изменения синхронизированы.',()=>{
+ $('close-shift').onclick=()=>{
+  if(syncMode==='pilot'){
+   appConfirm('Закрыть смену владельца? Это действие сначала сохранится локально.',()=>window.CRPilot?.closeShift());return;
+  }
+  appConfirm('Закрыть общую смену в Google Sheets? Убедись, что изменения синхронизированы.',()=>{
    if(syncDirty||syncBusy||syncMode!=='shared')return toast('Сначала дождись синхронизации');
    google.script.run.withSuccessHandler(()=>{toast('Смена закрыта');initLiveShift()}).withFailureHandler(err=>toast('Ошибка закрытия: '+String(err.message||err))).crLiveCloseShift(active.id);
- });
+  });
+ };
  refreshTileTimers();
  renderSyncStatus();
  }
@@ -1238,6 +1256,28 @@ if(tab==='guests'){
  });
 }
 if(tab==='system'){
+ if(syncMode==='pilot'){
+  const activePilot=openShift();
+  root.innerHTML='<div class="box"><h2>Смена владельца · PWA</h2>'+
+   '<p class="muted">Шифрованная синхронизация отдельного снимка. Пока не связано с iiko и рабочими листами заказов.</p><div id="pilot-sys"></div></div>';
+  const area=$('pilot-sys');
+  if(activePilot){
+   area.innerHTML='<p><strong>Открыта · '+esc(displayDate(activePilot.day))+'</strong></p><p>'+esc(window.CRPilot?.label()||'')+'</p>'+
+    '<button id="pilot-go">Открыть зал</button><button id="pilot-flush">Проверить синхронизацию</button>';
+   $('pilot-go').onclick=()=>{tab='shifts';paint()};
+   $('pilot-flush').onclick=()=>window.CRPilot?.refresh();
+  }else if(data.shifts?.length){
+   area.innerHTML='<p>Последняя смена закрыта. Архивация и открытие следующей смены будут доступны после подключения истории.</p>';
+  }else{
+   area.innerHTML='<form id="pilot-open"><label>Дата<input name="day" type="date" value="'+localDay()+'" required></label>'+
+    '<label>Официант<input name="waiter" maxlength="90" placeholder="Официант"></label><button class="primary" type="submit">Открыть смену</button></form>';
+   $('pilot-open').onsubmit=e=>{
+    e.preventDefault();const fd=new FormData(e.currentTarget);
+    window.CRPilot?.openShift({day:String(fd.get('day')||''),waiter:String(fd.get('waiter')||'')});
+   };
+  }
+  return;
+ }
  root.innerHTML='<div class="box"><h2>Общая смена · управление</h2>'+
  '<p class="muted">Одна общая смена для всех устройств. Данные карты, кальянов, VIP, бронирований и мойки хранятся в серверном состоянии смены.</p>'+
  '<div class="item"><span>Статус смены</span><strong id="shared-shift-status">Проверяем…</strong></div>'+
@@ -1305,7 +1345,12 @@ function health(){
   const e=$('server-result');if(e)e.textContent=syncError;
  }).crWebTestHealth();
 }
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;paint()});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+ if(window.CRPilot?.isActive()&&!['home','shifts','system'].includes(b.dataset.tab)){
+  toast('Этот раздел пока не подключён к синхронизации.');return;
+ }
+ tab=b.dataset.tab;paint()
+});
 // Common clear controls for all editable text, numeric, date/time and textarea inputs.
 // Wrapped after rendering; listener delegation also supports dynamically added flavor fields.
 // Touch-friendly searchable menus. Values still save in the existing order fields.
@@ -1381,6 +1426,35 @@ function setupClearControls(){
 }
 function updateHeaderClock(){const el=$('header-clock');if(el)el.textContent=new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}updateHeaderClock();setInterval(updateHeaderClock,1000);
 load();demoData=JSON.parse(JSON.stringify(data));
+window.CRPilot?.bind({
+ getSnapshot:()=>({state:syncClone(data),shiftId:syncShiftId,guests:REMOTE_GUESTS,lists:LIST_CATALOG}),
+ applySnapshot:(snapshot,revision,dirty)=>{
+  data=snapshot?.state||{shifts:[],hookahs:[],tables:[],bookings:[],washings:[],vipHours:[],guests:[]};
+  syncShiftId=String(snapshot?.shiftId||'');syncRevision=Number(revision)||0;
+  REMOTE_GUESTS=Array.isArray(snapshot?.guests)?snapshot.guests:[];
+  LIST_CATALOG=snapshot?.lists||LIST_CATALOG;
+  remoteGuestsLoaded=true;flavorCatalogLoaded=true;
+  syncMode='pilot';syncDirty=dirty?1:0;syncBusy=false;syncError='';
+  tab=data.shifts?.some(s=>s.status==='open')?'shifts':'system';
+  paint();renderSyncStatus();
+ },
+ updateStatus:({dirty,error})=>{
+  syncMode='pilot';syncDirty=dirty?1:0;syncError=error||'';
+  renderSyncStatus();
+ },
+ createShift:({day,waiter})=>{
+  if(data.shifts?.length)throw Error('Для новой смены необходима архивация предыдущей');
+  if(!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(day))throw Error('Некорректная дата смены');
+  const id='pilot-'+crypto.randomUUID();
+  data={shifts:[{id,day,status:'open',employees:[''],waiter}],hookahs:[],guests:[],tables:[],bookings:[],washings:[],vipHours:[]};
+  syncShiftId=id;syncMode='pilot';save();tab='shifts';paint();
+ },
+ closeShift:()=>{
+  if(syncDirty)throw Error('Перед закрытием дождись синхронизации');
+  const opened=openShift();if(!opened)return;
+  opened.status='closed';opened.closedAt=new Date().toISOString();save();paint();
+ }
+});
 window.CRPWA.setSnapshotProvider(()=>({
  state:data,shiftId:syncShiftId,revision:syncRevision,
  baseState:syncBaseState,dirty:syncDirty,guests:REMOTE_GUESTS,lists:LIST_CATALOG,past:PAST_DATA,
@@ -1396,6 +1470,7 @@ window.CRPWA.setRestoreSnapshot(snapshot=>{
  paint();renderSyncStatus();return true;
 });
 window.CRPWA.setOnConnected(()=>{
+ if(window.CRPilot?.isActive())return;
  // Locally generated test shifts must never be sent to production Sheets.
  if(String(syncShiftId||'').startsWith('local-test-')){
   syncMode='offline';syncError='Тестовая смена хранится только на устройстве и не отправляется на сервер';
