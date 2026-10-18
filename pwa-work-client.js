@@ -111,6 +111,8 @@
   if(!url){gate('Проверь адрес: нужна ссылка script.google.com/macros/s/.../dev или /exec');return}
   localStorage.setItem(KEY,url);nonce=crypto.randomUUID();peer=null;peerOrigin='';ready=false;
   const bridge=new URL(url);bridge.searchParams.set('view','bridge');bridge.searchParams.set('nonce',nonce);
+  // Browser popup COOP policies can sever window.opener. This cross-origin
+  // bridge therefore remains diagnostic only until a verified transport exists.
   popup=window.open(bridge.href,'cr_owner_'+nonce,'width=650,height=620');
   if(!popup){gate('Разреши всплывающие окна Chrome для COCKTAIL ROOM');return}
   document.getElementById('cr-gate-status').textContent='Ожидаем подтверждения подключения из окна Google…';
