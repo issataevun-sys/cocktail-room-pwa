@@ -415,6 +415,7 @@ const BRAND_LABELS={BB:'BB',CH:'CH',DEUS:'DEUS',DS:'DS',MH:'MH',OD:'OD',S:'S',TN
 function flavorOptions(){return '<datalist id="flavor-catalog">'+LIST_CATALOG.flavors.filter(x=>x.active).map(x=>'<option value="'+esc(x.brand+' '+x.name)+'"></option>').join('')+'</datalist>'}
 function listOptions(kind,id){return '<datalist id="'+id+'">'+(LIST_CATALOG[kind]||[]).filter(x=>x.active).map(x=>'<option value="'+esc(kind==='prices'?String(x.amount):x.name)+'"></option>').join('')+'</datalist>'}
 function loadFlavorCatalog(){
+ if(syncMode==='pilot'){flavorCatalogLoaded=true;return;}
  google.script.run.withSuccessHandler(rows=>{LIST_CATALOG=rows||LIST_CATALOG;flavorCatalogLoaded=true;if(tab==='lists')paint()}).withFailureHandler(e=>{flavorCatalogLoaded=false;toast('Не удалось загрузить списки: '+(e.message||e))}).crGetLists();
 }
 function catalogEditRow(kind,item){
@@ -438,6 +439,22 @@ function showListEditor(kind,id){
   if(kind==='flavors')record.brand=String(fd.get('brand')||'');
   if(kind==='prices')record.amount=Number(fd.get('amount'));
   const btn=$('list-edit-save');btn.disabled=true;btn.textContent='Сохраняем…';
+  if(syncMode==='pilot'){
+   if(!record.name){btn.disabled=false;return toast('Введи название');}
+   if(kind==='flavors'&&!record.brand.trim()){btn.disabled=false;return toast('Укажи бренд');}
+   const existing=LIST_CATALOG[kind]||[];
+   if(existing.some(x=>x.id!==item?.id&&x.name.trim().toLocaleLowerCase('ru')===record.name.toLocaleLowerCase('ru')&&
+     (kind!=='flavors'||String(x.brand||'').toLocaleLowerCase('ru')===record.brand.trim().toLocaleLowerCase('ru')))){
+    btn.disabled=false;btn.textContent='Сохранить';return toast('Такая позиция уже есть');
+   }
+   const updated={...item,...record,id:item?.id||crypto.randomUUID(),active:item?.active!==false,
+      createdAt:item?.createdAt||new Date().toISOString()};
+   const index=existing.findIndex(x=>x.id===updated.id);
+   if(index>=0)existing[index]=updated;else existing.push(updated);
+   LIST_CATALOG[kind]=existing;flavorCatalogLoaded=true;
+   save();closeModal();paint();toast('Список сохранён в зашифрованной базе PWA');
+   return;
+  }
   google.script.run.withSuccessHandler(res=>{
    const refresh=()=>google.script.run.withSuccessHandler(all=>{
     LIST_CATALOG=all||LIST_CATALOG;flavorCatalogLoaded=true;paint();closeModal();toast('Список сохранён');
@@ -981,12 +998,16 @@ function openWashScheduleEditor(){
  const hookahs=washCatalog().slice().sort((a,b)=>a.name.localeCompare(b.name,'ru'));
  if(!flavorCatalogLoaded)return toast('Дождись загрузки справочников');
  modal('<div class="modal-head"><h2>График мойки</h2><button class="modal-close" data-close-modal>×</button></div>'+
- '<p class="muted">Выбирай любые дни для каждого кальяна. Пустой график разрешён. Изменения сохраняются в Google Таблице.</p>'+
+ '<p class="muted">Выбирай любые дни для каждого кальяна. Пустой график разрешён. Изменения сохраняются в '+(syncMode==='pilot'?'зашифрованном хранилище PWA':'Google Таблице')+'.</p>'+
  '<div class="wash-schedule-list">'+hookahs.map(h=>'<div class="wash-schedule-item"><strong>'+esc(h.name)+'</strong><div class="wash-days">'+WEEKDAY_NAMES.map((d,i)=>'<label><input type="checkbox" data-wash-day="'+esc(h.id)+'" value="'+(i+1)+'" '+((h.washingWeekdays||[]).includes(i+1)?'checked':'')+'>'+d.slice(0,2)+'</label>').join('')+'</div></div>').join('')+'</div>'+
  '<div class="actions"><button type="button" data-close-modal>Отмена</button><button id="wash-schedule-save" class="primary">Сохранить график</button></div>',true);
  $('wash-schedule-save').onclick=()=>{
   const updates=hookahs.map(h=>({id:h.id,days:[...document.querySelectorAll('input[data-wash-day="'+CSS.escape(h.id)+'"]:checked')].map(x=>Number(x.value))}));
   const btn=$('wash-schedule-save');btn.disabled=true;btn.textContent='Сохраняем…';
+  if(syncMode==='pilot'){
+   hookahs.forEach(h=>{h.washingWeekdays=updates.find(u=>u.id===h.id)?.days||[]});
+   save();toast('График мойки сохранён');paint();showShiftInfo();return;
+  }
   google.script.run.withSuccessHandler(()=>{
    hookahs.forEach(h=>{h.washingWeekdays=updates.find(u=>u.id===h.id)?.days||[]});
    toast('График мойки сохранён');paint();showShiftInfo();
@@ -1261,7 +1282,7 @@ if(tab==='hookahs'){tab='shifts';paint();return;
 }
 if(tab==='lists'){
  const sections=[{key:'flavors',label:'Табаки и вкусы'},{key:'bowls',label:'Чаши'},{key:'hookahs',label:'Кальяны'},{key:'cooling',label:'Холодок'},{key:'prices',label:'Цены'}];
- root.innerHTML='<div class="box"><h2>Списки</h2><p class="muted">Можно добавлять, редактировать и архивировать позиции. Архив не удаляет историю.</p>'+
+ root.innerHTML='<div class="box"><h2>Списки</h2><p class="muted">Можно добавлять, редактировать и архивировать позиции. Архив не удаляет историю.'+(syncMode==='pilot'?' Сохраняются в зашифрованном состоянии PWA.':'')+'</p>'+
  (!flavorCatalogLoaded?'<p class="muted">Загружаем справочники…</p>':'')+
  '<div class="list">'+sections.map(section=>{
   const all=(LIST_CATALOG[section.key]||[]),active=all.filter(x=>x.active);
@@ -1282,6 +1303,9 @@ if(tab==='lists'){
   if(!obj)return;
   appConfirm((obj.active?'Архивировать':'Восстановить')+' «'+obj.name+'»?',()=>{
    b.disabled=true;
+   if(syncMode==='pilot'){
+    obj.active=!obj.active;save();paint();toast('Изменение сохранено');return;
+   }
    google.script.run.withSuccessHandler(()=>{obj.active=!obj.active;paint();toast('Справочник обновлён')}).withFailureHandler(err=>{b.disabled=false;toast('Ошибка: '+(err.message||err))}).crListsSetActive(kind,obj.id,!obj.active);
   });
  });
@@ -1409,7 +1433,7 @@ function health(){
  }).crWebTestHealth();
 }
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
- if(window.CRPilot?.isActive()&&!['home','shifts','system','past','guests'].includes(b.dataset.tab)){
+ if(window.CRPilot?.isActive()&&!['home','shifts','system','past','guests','lists'].includes(b.dataset.tab)){
   toast('Этот раздел пока не подключён к синхронизации.');return;
  }
  tab=b.dataset.tab;paint()
@@ -1495,7 +1519,7 @@ window.CRPilot?.bind({
   data=snapshot?.state||{shifts:[],hookahs:[],tables:[],bookings:[],washings:[],vipHours:[],guests:[]};
   syncShiftId=String(snapshot?.shiftId||'');syncRevision=Number(revision)||0;
   REMOTE_GUESTS=Array.isArray(snapshot?.guests)?snapshot.guests:[];
-  LIST_CATALOG=snapshot?.lists||LIST_CATALOG;
+  LIST_CATALOG=snapshot?.lists||{flavors:[],bowls:[],hookahs:[],cooling:[],prices:[]};
   remoteGuestsLoaded=true;flavorCatalogLoaded=true;
   syncMode='pilot';syncDirty=dirty?1:0;syncBusy=false;syncError='';
   tab=data.shifts?.some(s=>s.status==='open')?'shifts':'system';
