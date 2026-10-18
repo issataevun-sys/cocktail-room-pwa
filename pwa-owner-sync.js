@@ -18,7 +18,8 @@
  function updateStatus(error){
   lastError=error||'';
   statusText=blocked?'Конфликт · требуется сверка':
-    lastError?'Офлайн · '+lastError:
+    !navigator.onLine?'Офлайн · данные на устройстве':
+    lastError?'Ожидание · '+lastError:
     busy?'Синхронизация…':
     local?.dirty?'Ожидает отправки · '+stamp():
     'Онлайн · синхронизировано';
@@ -195,5 +196,9 @@
    if(local?.dirty)schedule();else refresh();
   }
  });
- setInterval(()=>{if(active&&navigator.onLine&&local?.dirty&&!busy&&!blocked)schedule()},30000);
+ setInterval(()=>{
+  if(active&&navigator.onLine&&!busy&&!blocked){
+   if(local?.dirty)schedule();else refresh();
+  }
+ },45000);
 })();
