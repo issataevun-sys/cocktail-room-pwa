@@ -3,9 +3,7 @@ on:
   push:
     branches:
       - main
-      - feature/two-device-safe-merge-20261019
-      - feature/shift-history-workflow-20261018
-      - fix/offline-close-outbox-20261018
+      - maintenance/single-management-release-20261019
     paths:
       - work.html
       - pwa-workspace-merge.js
@@ -14,6 +12,8 @@ on:
       - secure-work-store.js
       - pwa-work-client.js
       - sw.js
+      - manifest.webmanifest
+      - index.html
       - tests/**
       - .github/workflows/verify-owner-pwa.yml
   workflow_dispatch:
