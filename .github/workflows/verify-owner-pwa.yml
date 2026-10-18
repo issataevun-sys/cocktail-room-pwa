@@ -4,6 +4,7 @@ on:
     branches:
       - main
       - feature/shift-history-workflow-20261018
+      - fix/offline-close-outbox-20261018
     paths:
       - work.html
       - pwa-owner-sync.js
@@ -25,4 +26,6 @@ jobs:
         with:
           node-version: '22'
       - name: Validate JavaScript and offline shift workflow
-        run: node tests/smoke.cjs
+        run: |
+          node tests/smoke.cjs
+          node tests/owner-sync.cjs
