@@ -273,6 +273,106 @@
   updateStatus(lastError);
   if(local.dirty&&!blocked)schedule();
  }
+
+ // Owner-only manual cleanup of explicitly selected IDs. No name heuristics,
+ // no deletion of open shifts, and no mutation of normalized Google Sheets.
+ function cleanupBuild(snapshot,selection){
+  const state=snapshot?.state||{};
+  const pick=name=>{
+   const values=selection?.[name]||[];
+   if(!Array.isArray(values)||values.some(x=>typeof x!=='string'||!x||x.length>120))
+    throw Error('Недопустимый список для удаления: '+name);
+   if(new Set(values).size!==values.length)throw Error('Повторное выделение записи');
+   return new Set(values);
+  };
+  const shifts=pick('shiftIds'),orders=pick('orderIds'),guests=pick('guestIds');
+  if(!shifts.size&&!orders.size&&!guests.size)throw Error('Сначала отметь записи для удаления');
+  const arr=x=>Array.isArray(x)?x:[];
+  const allShifts=arr(state.shifts),allOrders=arr(state.hookahs);
+  for(const id of shifts){
+   const row=allShifts.find(x=>x.id===id);
+   if(!row)throw Error('Смена уже изменилась. Открой очистку заново.');
+   if(row.status!=='closed')throw Error('Нельзя удалять открытую смену');
+  }
+  for(const id of orders)if(!allOrders.some(x=>x.id===id))
+   throw Error('Кальян уже изменился. Открой очистку заново.');
+  const guestRows=arr(snapshot.guests).concat(arr(state.guests));
+  for(const id of guests)if(!guestRows.some(x=>x.id===id))
+   throw Error('Гость уже изменился. Открой очистку заново.');
+  const removeOrder=o=>orders.has(o.id)||shifts.has(o.shiftId);
+  const retainedOrders=allOrders.filter(o=>!removeOrder(o));
+  const retainedBookings=arr(state.bookings).filter(b=>!shifts.has(b.shiftId));
+  for(const id of guests){
+   const g=guestRows.find(x=>x.id===id);
+   const usesGuest=o=>o.guestId===id||o.guestID===id||
+    (g.name&&String(o.guest||'').trim().toLowerCase()===String(g.name).trim().toLowerCase());
+   if(retainedOrders.some(usesGuest)||retainedBookings.some(usesGuest))
+    throw Error('Гость «'+String(g.name||id)+'» используется в оставшихся кальянах или бронях. Сначала удали связанные тестовые записи.');
+  }
+  const result=clone(snapshot);
+  if(!Array.isArray(result.state.shifts)||!Array.isArray(result.state.hookahs))
+   throw Error('Неизвестная структура базы, очистка остановлена');
+  const removed={shifts:shifts.size,hookahs:allOrders.filter(removeOrder).length,
+   guests:arr(snapshot.guests).filter(g=>guests.has(g.id)).length+
+    arr(state.guests).filter(g=>guests.has(g.id)).length};
+  for(const key of ['shifts','hookahs','tables','bookings','washings','vipHours']){
+   if(!Array.isArray(result.state[key]))continue;
+   result.state[key]=result.state[key].filter(x=>
+    key==='shifts'?!shifts.has(x.id):
+    key==='hookahs'?!removeOrder(x):
+    !shifts.has(x.shiftId));
+  }
+  if(Array.isArray(result.state.guests))
+   result.state.guests=result.state.guests.filter(x=>!guests.has(x.id));
+  if(Array.isArray(result.guests))
+   result.guests=result.guests.filter(x=>!guests.has(x.id));
+  return {payload:result,removed};
+ }
+ async function cleanupSelected(selection){
+  if(!active||!hooks||!local)throw Error('Сначала подключи MANAGEMENT');
+  if(!navigator.onLine||busy||refreshing||local.dirty||local.pending||blocked)
+   throw Error('Очистка возможна только при статусе «Онлайн · синхронизировано»');
+  busy=true;updateStatus('');
+  let committed=false;
+  try{
+   await saveChain;
+   const generation=local.generation,revision=local.revision;
+   const original=clone(local.payload);
+   // Before any destructive operation, independently verify fresh server state.
+   const remote=await transport.load();
+   if(remote.revision!==revision){
+    await reconcile(remote);
+    throw Error('Данные на другом устройстве изменились. Открой очистку заново.');
+   }
+   if(local.generation!==generation||local.dirty||
+      JSON.stringify(local.payload)!==JSON.stringify(original))
+    throw Error('Данные изменились во время проверки. Открой очистку заново.');
+   const plan=cleanupBuild(original,selection);
+   // Write-once encrypted recovery point: repeated cleanups never replace
+   // the original pre-cleanup data; Google Sheets also has owner backup.
+   const previous=await STORE().loadNamed('pilot-precleanup');
+   if(!previous)await STORE().saveNamed('pilot-precleanup',{
+    payload:original,revision,createdAt:new Date().toISOString(),
+    reason:'MANAGEMENT owner manual cleanup'
+   });
+   if(local.generation!==generation||local.dirty||
+      JSON.stringify(local.payload)!==JSON.stringify(original))
+    throw Error('Изменения во время резервирования. Очистка отменена.');
+   local.payload=plan.payload;
+   local.generation=(Number(local.generation)||0)+1;
+   local.dirty=true;
+   try{await persist();committed=true;}catch(e){
+    local.payload=original;local.generation=generation;
+    blocked=true;
+    throw Error('Не удалось зашифрованно сохранить очистку: '+String(e.message||e));
+   }
+   hooks.applySnapshot(local.payload,local.revision,true);
+   return {removed:plan.removed,locallySaved:true};
+  }finally{
+   busy=false;updateStatus('');
+   if(committed)schedule();
+  }
+ }
  function fields(){
   const get=id=>String(document.getElementById(id)?.value||'').trim();
   return {url:get('pilot-endpoint'),deviceId:get('pilot-device-id'),
@@ -303,7 +403,7 @@
   };
  }
  window.CRPilot={
-  bind:obj=>{hooks=obj},isActive:()=>active,onChange,refresh,flush,
+  bind:obj=>{hooks=obj},isActive:()=>active,onChange,refresh,flush,cleanupSelected,
   label:()=>statusText,
   openShift:async args=>{
    if(!active||!hooks)return;
