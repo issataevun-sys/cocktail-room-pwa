@@ -91,6 +91,8 @@ input::placeholder,textarea::placeholder{color:#949ea6;opacity:1;font-weight:400
 <div id="content"></div></main></div><div id="modal-host"></div><div id="message" role="status"></div>
 <script src="./secure-work-store.js"></script>
 <script src="./pwa-work-client.js"></script>
+<script src="./pwa-relay-transport.js"></script>
+<script src="./pwa-owner-sync.js"></script>
 <script>
 'use strict';
 const storageKey='cocktail-room-htmlservice-demo-v06';
@@ -105,7 +107,7 @@ let REMOTE_GUESTS=[],remoteGuestsLoaded=false;
 let PAST_DATA=null,PAST_LOADING=false,PAST_LAST_ERROR='',PAST_FILTERS={month:'',worker:'',issues:false,search:''},PAST_VISIBLE=60;
 function load(){try{const x=JSON.parse(sessionStorage.getItem(storageKey)||'{}');data={shifts:Array.isArray(x.shifts)?x.shifts:[],hookahs:Array.isArray(x.hookahs)?x.hookahs:[],guests:Array.isArray(x.guests)?x.guests:[],tables:Array.isArray(x.tables)?x.tables:[],bookings:Array.isArray(x.bookings)?x.bookings:[],washings:Array.isArray(x.washings)?x.washings:[],vipHours:Array.isArray(x.vipHours)?x.vipHours:[]};}catch{data={shifts:[],hookahs:[],guests:[],tables:[],bookings:[],washings:[],vipHours:[]}}}
 function save(){
- if(syncMode==='shared'||syncMode==='offline'||syncMode==='conflict'){
+ if(syncMode==='shared'||syncMode==='offline'||syncMode==='conflict'||syncMode==='pilot'){
   syncDirty++;
   const pending={shiftId:syncShiftId,revision:syncRevision,state:data};
   pending.baseState=syncBaseState;
@@ -114,13 +116,17 @@ function save(){
    renderSyncStatus();
   });
   if(syncMode==='shared')scheduleSync();
+  if(syncMode==='pilot')window.CRPilot?.onChange();
   renderSyncStatus();
  }else if(syncMode==='demo'){/* Public PWA never persists real guest data unencrypted. */}
 }
 function renderSyncStatus(){
  const pill=$('server'),el=$('live-sync-status');
  let label='Проверка сервера…',cls='sync-pending';
- if(String(syncShiftId||'').startsWith('local-test-')){label='Локальная тестовая смена';cls='sync-pending';}
+ if(syncMode==='pilot'){
+  label=window.CRPilot?.label()||'Владелец · локальная смена';cls=syncError?'sync-error':syncDirty?'sync-pending':'sync-online';
+ }
+ else if(String(syncShiftId||'').startsWith('local-test-')){label='Локальная тестовая смена';cls='sync-pending';}
  else  if(syncMode==='conflict'||remoteRefreshAvailable){label='Конфликт изменений';cls='sync-error'}
  else if(syncMode==='offline'||syncMode==='unavailable'||(typeof navigator!=='undefined'&&!navigator.onLine)){
   label='Офлайн · '+(syncDirty?'Ожидает отправки':'Сервер недоступен');cls='sync-error';
@@ -130,7 +136,9 @@ function renderSyncStatus(){
  else if(syncMode==='shared'){label='Проверка сервера…'}
  if(pill){pill.textContent=label;pill.className='pill '+cls;pill.title=lastServerOK?'Последний ответ сервера: '+new Date(lastServerOK).toLocaleTimeString('ru-RU'):'Нет подтверждённого ответа сервера'}
  if(!el)return;
- if(syncMode==='conflict'||remoteRefreshAvailable){
+ if(syncMode==='pilot'){
+  el.textContent=label+(syncError?' · '+syncError:'');
+ }else if(syncMode==='conflict'||remoteRefreshAvailable){
   el.innerHTML='<span class="sync-warning">На сервере есть другая версия смены. Локальные изменения не перезаписываются.</span>'+
    '<button type="button" class="smallaction" id="sync-review">Проверить статус</button>';
   $('sync-review').onclick=checkSharedHeartbeat;
@@ -1124,7 +1132,10 @@ if(tab==='shifts'){
  const main=$('content');
  main.innerHTML='<div class="box sync-top"><div class="sectionhead"><h2>Общая смена</h2><span class="tag">Google Sheets</span></div><div id="live-sync-status"></div>'+
  '<div class="actions"><button type="button" id="live-shift-refresh">Обновить с сервера</button></div></div>';
- $('live-shift-refresh').onclick=()=>{if(syncDirty)return toast('Есть несинхронизированные изменения. Сначала отправь их.');initLiveShift()};
+ $('live-shift-refresh').onclick=()=>{
+  if(syncMode==='pilot'){window.CRPilot?.refresh();return;}
+  if(syncDirty)return toast('Есть несинхронизированные изменения. Сначала отправь их.');initLiveShift()
+ };
  if(syncMode==='conflict'||syncMode==='loading'||syncMode==='unavailable'){
   main.innerHTML+='<div class="box"><h2>'+(syncMode==='loading'?'Загрузка общей смены…':syncMode==='conflict'?'Конфликт данных':'Нет связи с сервером')+'</h2><p class="muted">'+esc(syncError||'Подключаемся к Google Sheets')+'</p>'+
    (syncMode==='conflict'?'<p>Изменения остались на этом устройстве. Для продолжения требуется сверка, автоматического перезаписывания нет.</p>':'')+'</div>';
@@ -1137,7 +1148,8 @@ if(tab==='shifts'){
  }
  if(syncMode==='offline')renderSyncStatus();
  if(!active){
-  main.innerHTML+='<div class="box">Смена отсутствует в полученном состоянии. Перезагрузи данные с сервера.</div>';
+  main.innerHTML+='<div class="box">Смена не открыта. Открой её в разделе «Система».</div><button id="create-from-shifts" type="button">Перейти в систему</button>';
+  $('create-from-shifts').onclick=()=>{tab='system';paint()};
  }else{
  const orders=data.hookahs.filter(o=>o.shiftId===active.id);
  const bookings=data.bookings.filter(b=>b.day>=localDay()||b.day===active.day).sort((a,b)=>{
@@ -1305,7 +1317,12 @@ function health(){
   const e=$('server-result');if(e)e.textContent=syncError;
  }).crWebTestHealth();
 }
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;paint()});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+ if(window.CRPilot?.isActive()&&!['home','shifts','system'].includes(b.dataset.tab)){
+  toast('Этот раздел пока не подключён к синхронизации.');return;
+ }
+ tab=b.dataset.tab;paint()
+});
 // Common clear controls for all editable text, numeric, date/time and textarea inputs.
 // Wrapped after rendering; listener delegation also supports dynamically added flavor fields.
 // Touch-friendly searchable menus. Values still save in the existing order fields.
