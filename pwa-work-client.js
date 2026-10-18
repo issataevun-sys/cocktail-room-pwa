@@ -18,7 +18,7 @@
  '<div id="cr-local-preview" style="font-size:12px;color:#5a6c77;margin-top:9px"></div>'+
  '<button id="cr-continue-offline" disabled style="margin-top:10px;padding:10px 12px">Продолжить сохранённую смену офлайн</button>'+ 
  '<button id="cr-test-offline" style="margin:10px 0 0 8px;padding:10px 12px">Новая тестовая офлайн-смена</button></div>'+
- '<p style="font-size:12px;color:#7c8892;margin-top:15px">Офлайн-режим доступен после шифрованного сохранения смены. Изменения отправляются через Google после восстановления связи.</p></div>';
+ '<p style="font-size:12px;color:#7c8892;margin-top:15px">Офлайн-режим доступен после шифрованного сохранения смены. Тестовая офлайн-смена хранится только на устройстве. Автоматическая синхронизация с Google Sheets пока не подключена.</p></div>';
  const enableOffline=document.createElement('button');
  enableOffline.textContent='Включить офлайн';
  enableOffline.id='cr-enable-offline';
