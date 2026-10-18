@@ -12,7 +12,7 @@ pre{background:white;border:1px solid #dae1e5;padding:14px;border-radius:9px;whi
 small{color:#51626c;line-height:1.4}.warn{background:#fff6e8;padding:12px;border-radius:9px;font-size:13px}
 </style></head><body><main>
 <h1>COCKTAIL ROOM · защищённый обмен</h1>
-<p>Тест новой связи <b>без Google Cloud</b>: сообщение шифруется на iPhone, отправляется в отдельный Apps Script и возвращается зашифрованным. iPhone проверяет подпись запроса и расшифровывает ответ.</p>
+<p>Тест новой связи <b>без Google Cloud</b>: сообщение шифруется на iPhone, отправляется в отдельный Apps Script и возвращается зашифрованным. Apps Script проверяет подпись запроса, а iPhone расшифровывает ответ.</p>
 <p class="warn"><b>Только тест.</b> Используй отдельный Apps Script <code>SecureStagingSync.gs</code>, не рабочую базу. Не вводи здесь реальные имена гостей, PIN, телефоны или данные смены. Ключ сопряжения нигде не публикуй.</p>
 <label for="endpoint">Адрес отдельного тестового Apps Script /exec</label>
 <input id="endpoint" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" autocapitalize="off">
