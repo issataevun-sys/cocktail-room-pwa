@@ -48,14 +48,26 @@
   let host='';try{host=new URL(event.origin).hostname}catch(e){}
   if(host!=='script.google.com'&&host!=='script.googleusercontent.com'&&!host.endsWith('.script.googleusercontent.com'))return;
   if(msg.type==='ready'){
+   // A popup's visual "access confirmed" text is not proof of a working RPC channel.
+   // First verify a real server round-trip before unlocking the application.
+   if(connected||ready)return;
    peer=event.source;peerOrigin=event.origin;lastHeartbeat=Date.now();ready=true;
-   clearTimeout(connectTimer);
-   if(!connected){
-    connected=true;offlineEditing=false;window.CRPWA.connected=true;overlay.style.display='none';toolbar.style.display='none';
+   const probeId=crypto.randomUUID();
+   const probeTimer=setTimeout(()=>{
+    pending.delete(probeId);ready=false;peer=null;
+    gate('Google подтвердил вход, но обмен с PWA не работает. Рабочая смена доступна через «Открыть рабочую версию».');
+   },9000);
+   pending.set(probeId,{id:probeId,timer:probeTimer,ok:result=>{
+    if(!result?.ok){ready=false;gate('Сервер не подтвердил доступ к PWA');return}
+    clearTimeout(connectTimer);
+    connected=true;offlineEditing=false;window.CRPWA.connected=true;
+    overlay.style.display='none';toolbar.style.display='none';
     enableOffline.style.display=window.CRWorkStore?.isUnlocked()?'none':'block';
-    while(queue.length){const job=queue.shift();dispatch(job)}
+    while(queue.length)dispatch(queue.shift());
     if(typeof onConnected==='function')try{onConnected()}catch(e){console.error(e)}
-   }
+   },fail:error=>{ready=false;gate('Не удалось проверить сервер: '+String(error?.message||error))}});
+   try{peer.postMessage({channel:CHANNEL,nonce,type:'rpc',id:probeId,method:'crWebTestHealth',args:[]},peerOrigin)}
+   catch(error){clearTimeout(probeTimer);pending.delete(probeId);ready=false;gate('Не удалось отправить запрос Google: '+String(error))}
   }
   if(msg.type==='result'){
    const job=pending.get(msg.id);if(!job)return;
@@ -66,7 +78,7 @@
  };
  window.addEventListener('message',receive);
  function dispatch(job){
-  if(!connected||!peer){if(offlineEditing){job.fail?.({message:'Для этой операции требуется Google-сервер'});return}queue.push(job);return}
+  if(!connected||!peer){job.fail?.({message:'Нет подтверждённого соединения с Google. Изменение не отправлено.'});return}
   job.id=crypto.randomUUID();
   job.timer=setTimeout(()=>{
    if(!pending.has(job.id))return;
