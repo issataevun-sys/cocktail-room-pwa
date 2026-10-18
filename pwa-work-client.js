@@ -16,7 +16,8 @@
  '<label>Фраза для шифрования локальной копии (от 12 символов)<input id="cr-offline-secret" type="password" style="box-sizing:border-box;width:100%;padding:11px;border:1px solid #d1d8dc;border-radius:8px;margin-top:5px" autocomplete="new-password"></label>'+
  '<button id="cr-secure-cache" style="margin-top:8px;padding:9px 12px">Разблокировать защищённое хранилище</button>'+
  '<div id="cr-local-preview" style="font-size:12px;color:#5a6c77;margin-top:9px"></div>'+
- '<button id="cr-continue-offline" disabled style="margin-top:10px;padding:10px 12px">Продолжить сохранённую смену офлайн</button></div>'+
+ '<button id="cr-continue-offline" disabled style="margin-top:10px;padding:10px 12px">Продолжить сохранённую смену офлайн</button>'+ 
+ '<button id="cr-test-offline" style="margin:10px 0 0 8px;padding:10px 12px">Новая тестовая офлайн-смена</button></div>'+
  '<p style="font-size:12px;color:#7c8892;margin-top:15px">Офлайн-режим доступен после шифрованного сохранения смены. Изменения отправляются через Google после восстановления связи.</p></div>';
  const enableOffline=document.createElement('button');
  enableOffline.textContent='Включить офлайн';
@@ -169,6 +170,27 @@
     }else preview.textContent='Хранилище разблокировано. После подключения к Google доступная смена сохранится в зашифрованном виде.';
     if(connected){scheduleEncryptedSnapshot();overlay.style.display='none';enableOffline.style.display='none';}
    }catch(e){preview.textContent='Не удалось открыть хранилище: '+String(e.message||e)}
+  };
+  document.getElementById('cr-test-offline').onclick=async()=>{
+   const label=document.getElementById('cr-local-preview');
+   if(!window.CRWorkStore?.isUnlocked()){
+    label.textContent='Сначала введи фразу и разблокируй хранилище';return;
+   }
+   if(unlockedSnapshot?.state){
+    label.textContent='На устройстве уже есть сохранённая смена. Открой её — новую поверх создавать нельзя.';return;
+   }
+   const today=new Date(),day=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
+   const id='local-test-'+crypto.randomUUID();
+   const snapshot={shiftId:id,revision:0,dirty:1,baseState:null,guests:[],lists:null,past:null,
+    state:{shifts:[{id,day,status:'open',employees:['ТЕСТ'],waiter:'ТЕСТ'}],hookahs:[],tables:[],bookings:[],washings:[],vipHours:[],guests:[]},capturedAt:new Date().toISOString()};
+   try{
+    await window.CRWorkStore.save(snapshot);
+    unlockedSnapshot=snapshot;
+    if(!restoreSnapshot?.(snapshot))throw new Error('Интерфейс не принял тестовую смену');
+    offlineEditing=true;connected=false;window.CRPWA.connected=false;
+    overlay.style.display='none';toolbar.style.display='flex';enableOffline.style.display='none';
+    document.getElementById('cr-local-status').textContent='ТЕСТ · только на устройстве · без синхронизации';
+   }catch(error){label.textContent='Ошибка: '+String(error.message||error)}
   };
   document.getElementById('cr-continue-offline').onclick=()=>{
    if(!unlockedSnapshot?.state||!restoreSnapshot)return;
