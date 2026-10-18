@@ -1393,6 +1393,11 @@ window.CRPWA.setRestoreSnapshot(snapshot=>{
  paint();renderSyncStatus();return true;
 });
 window.CRPWA.setOnConnected(()=>{
+ // Locally generated test shifts must never be sent to production Sheets.
+ if(String(syncShiftId||'').startsWith('local-test-')){
+  syncMode='offline';syncError='Тестовая смена хранится только на устройстве и не отправляется на сервер';
+  renderSyncStatus();return;
+ }
  if(syncDirty&&syncShiftId){
   syncMode='shared';flushLiveSync();
  }else initLiveShift();
