@@ -190,6 +190,7 @@
  };
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
  window.addEventListener('online',()=>{if(active){if(local?.dirty)schedule();else refresh()}});
+ window.addEventListener('offline',()=>{if(active)updateStatus('')});
  window.addEventListener('focus',()=>{if(active&&navigator.onLine){if(local?.dirty)schedule();else refresh()}});
  document.addEventListener('visibilitychange',()=>{
   if(active&&document.visibilityState==='visible'&&navigator.onLine){
