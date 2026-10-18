@@ -1,20 +1,57 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>COCKTAIL ROOM — проверка связи</title><style>body{font:16px system-ui;padding:18px;max-width:520px;margin:auto;background:#f5f6f7;color:#222}input,button{box-sizing:border-box;width:100%;padding:12px;margin:8px 0;border:1px solid #aaa;border-radius:8px}button{background:#1a3038;color:#fff}pre{white-space:pre-wrap;word-break:break-word;background:white;padding:12px;border-radius:8px}</style></head>
-<body><h2>COCKTAIL ROOM · Проверка связи</h2><p>Тест без чтения или записи в Google Sheets. Используется только отдельный Apps Script /exec, в котором опубликован endpoint connectivity.</p>
-<input id="url" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+<title>COCKTAIL ROOM — проверка связи</title>
+<style>
+body{font:16px system-ui;padding:18px;max-width:520px;margin:auto;background:#f5f6f7;color:#222}
+input,button{box-sizing:border-box;width:100%;padding:12px;margin:8px 0;border:1px solid #aaa;border-radius:8px}
+button{background:#1a3038;color:#fff}pre{white-space:pre-wrap;word-break:break-word;background:white;padding:12px;border-radius:8px}
+a{display:block;margin-top:8px;word-break:break-all}
+</style></head>
+<body><h2>COCKTAIL ROOM · Проверка связи</h2>
+<p>Проверка только тестового Apps Script без чтения и записи данных. Попробуем обычный HTTPS и альтернативное получение публичного тестового ответа.</p>
+<input id="url" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
 <button id="check">Проверить соединение</button><pre id="result">Ожидание проверки</pre>
+<a id="direct" style="display:none" target="_blank" rel="noopener noreferrer">Открыть ответ Google напрямую</a>
 <script>
-document.getElementById('check').onclick=async()=>{
- const out=document.getElementById('result');
- try{
- const u=new URL(document.getElementById('url').value.trim());
+const field=document.getElementById('url'),out=document.getElementById('result'),direct=document.getElementById('direct');
+try{field.value=sessionStorage.getItem('cr-test-url')||''}catch(_){}
+function target(){
+ const u=new URL(field.value.trim());
  if(u.protocol!=='https:'||u.hostname!=='script.google.com'||!/^\/macros\/s\/[a-zA-Z0-9_-]+\/exec\/?$/.test(u.pathname))throw Error('Введи адрес тестового /exec');
  u.searchParams.set('view','connectivity');
- out.textContent='Проверяем ответ сервера…';
- const r=await fetch(u.href,{mode:'cors',credentials:'omit',redirect:'follow',cache:'no-store'});
- const body=await r.json();
- out.textContent=JSON.stringify({httpStatus:r.status,response:body},null,2);
- }catch(e){out.textContent='Невозможно прочитать ответ: '+String(e.message||e)+'\nВозможны ограничения CORS, авторизации или сети.'}
+ return u;
+}
+function jsonp(u){
+ return new Promise((resolve,reject)=>{
+  const cb='__crProbe_'+Math.random().toString(36).slice(2,12),s=document.createElement('script');
+  let done=false;
+  const cleanup=()=>{if(done)return;done=true;clearTimeout(timer);s.remove();delete window[cb]};
+  window[cb]=value=>{cleanup();resolve(value)};
+  s.onerror=()=>{cleanup();reject(new Error('Сервер не вернул исполняемый тестовый ответ'))};
+  const timer=setTimeout(()=>{cleanup();reject(new Error('Нет ответа за 12 секунд'))},12000);
+  u.searchParams.set('callback',cb);
+  s.src=u.href;document.head.appendChild(s);
+ });
+}
+document.getElementById('check').onclick=async()=>{
+ let u;
+ try{u=target()}catch(e){out.textContent=String(e.message||e);return}
+ try{sessionStorage.setItem('cr-test-url',field.value.trim())}catch(_){}
+ direct.href=u.href;direct.style.display='block';
+ let reason='';
+ out.textContent='1/2: проверка HTTPS…';
+ try{
+  const r=await fetch(u.href,{mode:'cors',credentials:'omit',redirect:'follow',cache:'no-store'});
+  const body=await r.json();
+  out.textContent='HTTPS: удалось прочитать ответ\n'+JSON.stringify({status:r.status,body},null,2);
+  return;
+ }catch(e){reason=String(e.message||e)}
+ out.textContent='HTTPS: ответ недоступен ('+reason+')\n2/2: проверяем альтернативный канал…';
+ try{
+  const result=await jsonp(new URL(u.href));
+  if(result&&result.ok===true&&result.probe===true){
+    out.textContent='HTTPS: браузер блокирует чтение ('+reason+')\nJSONP: тестовый ответ получен!\n'+JSON.stringify(result,null,2)+'\nДанные гостей при проверке не передавались.';
+  }else out.textContent='JSONP: неожиданный ответ\n'+JSON.stringify(result,null,2);
+ }catch(e){out.textContent='HTTPS: '+reason+'\nJSONP: '+String(e.message||e)+'\nНажми «Открыть ответ Google напрямую» и пришли скриншот.'}
 };
 </script></body></html>
