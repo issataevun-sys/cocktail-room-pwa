@@ -2,14 +2,13 @@ import {all,putAndQueue,removeAndQueue,exportBackup,verifyLocalStorage,getLocalS
 import {activeShift,renderShifts} from './shifts-ui.js';
 const $=s=>document.querySelector(s);
  async function launchWork(url){
-  if(navigator.onLine){window.location.assign(url);return}
-  try{
-   if(await window.CRWorkStore?.hasSnapshot?.()){
-    window.location.assign('./work.html');return;
-   }
-  }catch(error){console.error('Offline snapshot check failed',error)}
-  notify('Нет интернета и сохранённой зашифрованной смены. Подключи интернет для первого запуска.');
+  const valid=checkOwnerAppUrl(url);
+  if(!valid)return notify('Сначала укажи адрес рабочего Google Apps Script');
+  localStorage.setItem('cr-pwa-work-url',valid);
+  // The PWA interface remains on GitHub Pages. Google Apps Script opens only on explicit request.
+  window.location.assign('./work.html');
  }
+
 let view='dashboard',installEvent=null;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date=v=>new Date(v).toLocaleString('ru-RU',{dateStyle:'short',timeStyle:'short'});
@@ -191,13 +190,8 @@ window.addEventListener('appinstalled',()=>{installEvent=null;if(view==='install
 window.addEventListener('online',status);window.addEventListener('offline',status);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(console.error);
 (async()=>{
- const saved=localStorage.getItem('cr-pwa-work-url')||'';
- const url=checkOwnerAppUrl(saved);
- if(url){
-  if(navigator.onLine){window.location.replace(url);return}
-  try{
-   if(await window.CRWorkStore?.hasSnapshot?.()){window.location.replace('./work.html');return}
-  }catch(e){console.error('Offline snapshot check failed',e)}
- }
+ // Enter the PWA's own work UI when configured; never redirect to Apps Script.
+ const url=checkOwnerAppUrl(localStorage.getItem('cr-pwa-work-url')||'');
+ if(url){window.location.replace('./work.html');return}
  render().catch(err=>{$('#content').textContent='Ошибка локальной базы: '+err.message});
 })();
