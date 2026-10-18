@@ -7,7 +7,7 @@
 (function(){
  const STORE=()=>window.CRWorkStore;
  let hooks=null,transport=null,local=null,active=false,busy=false,blocked=false;
- let config=null,saveChain=Promise.resolve(),timer=null,lastError='',statusText='Офлайн · ожидает соединения';
+ let config=null,saveChain=Promise.resolve(),timer=null,lastError='',statusText='Офлайн · ожидает соединения',refreshing=false;
  const EMPTY=()=>({state:{shifts:[],hookahs:[],tables:[],bookings:[],washings:[],vipHours:[],guests:[]},shiftId:'',guests:[],lists:null});
  const clone=o=>JSON.parse(JSON.stringify(o));
  const stamp=()=>new Date().toLocaleTimeString('ru-RU');
@@ -29,7 +29,7 @@
  function persist(){
   if(!local)return Promise.resolve();
   const frozen=clone(local);
-  saveChain=saveChain.then(()=>STORE().saveNamed('pilot-work',frozen));
+  saveChain=saveChain.catch(()=>{}).then(()=>STORE().saveNamed('pilot-work',frozen));
   return saveChain;
  }
  function schedule(){
@@ -52,12 +52,17 @@
   busy=true;updateStatus('');
   try{
    await saveChain;
-   let generation=local.generation,submitted=null;
+   let submitted=null;
    if(local.pending){
     submitted=local.pending;
    }else{
-    submitted=await transport.prepare(local.payload.shiftId,local.revision,local.payload);
+    // Capture both the content and its generation BEFORE asynchronous encryption.
+    // An edit arriving while POST/ACK is running must remain in the outbox.
+    const generation=local.generation;
+    const snapshot=clone(local.payload);
+    submitted=await transport.prepare(snapshot.shiftId,local.revision,snapshot);
     local.pending=submitted;
+    local.pendingGeneration=generation;
     await persist();
    }
    const result=await transport.submit(submitted);
@@ -70,8 +75,13 @@
     return;
    }
    local.revision=result.revision;
+   // Older local records might not have pendingGeneration. In that case a
+   // conservative extra send is safer than discarding unsent changes.
+   const fullyAcknowledged=Number.isInteger(local.pendingGeneration)&&
+     local.pendingGeneration===local.generation;
    local.pending=null;
-   if(local.generation===generation)local.dirty=false;
+   local.pendingGeneration=null;
+   if(fullyAcknowledged)local.dirty=false;
    await persist();
    updateStatus('');
   }catch(error){updateStatus(String(error?.message||error))}
@@ -84,8 +94,9 @@
  async function refresh(){
   if(!active||!transport)return;
   if(!navigator.onLine){updateStatus('Нет интернета');return}
-  if(busy)return;
+  if(busy||refreshing)return;
   if(local?.dirty){await flush();return}
+  refreshing=true;
   try{
    const remote=await transport.load();
    if(remote.revision===local.revision){lastError='';updateStatus('');return}
@@ -98,6 +109,7 @@
    hooks.applySnapshot(local.payload,local.revision,false);
    updateStatus('');
   }catch(error){updateStatus(String(error?.message||error))}
+  finally{refreshing=false;}
  }
  async function activate(given){
   if(!hooks)throw Error('Экран смены ещё не готов');
@@ -117,6 +129,21 @@
   }else if(!saved)throw Error('Для первого подключения нужен интернет');
   if(saved){
    local=saved;
+   // The previous POST might have succeeded even if Safari was closed before
+   // its opaque response was confirmed. Check the durable operation receipt.
+   if(remote&&remote.revision>local.revision&&local.dirty&&local.pending){
+    let receipt=null;
+    try{receipt=await transport.receipt(local.pending.operation);}catch(e){}
+    if(receipt?.confirmed&&Number.isInteger(Number(receipt.revision))){
+     local.revision=Number(receipt.revision);
+     const fullyAcknowledged=Number.isInteger(local.pendingGeneration)&&
+       local.pendingGeneration===local.generation;
+     local.pending=null;
+     local.pendingGeneration=null;
+     if(fullyAcknowledged)local.dirty=false;
+     await persist();
+    }
+   }
    if(remote&&remote.revision>local.revision){
     if(local.dirty){
      blocked=true;lastError='Конфликт: на сервере новая версия';
@@ -180,11 +207,15 @@
    catch(e){updateStatus(String(e?.message||e))}
   },
   closeShift:async()=>{
-   if(!active||!hooks)return;
+   if(!active||!hooks||blocked)return;
    try{
-    if(local?.dirty)await flush();
-    if(local?.dirty)throw Error('Есть неподтверждённые изменения');
-    hooks.closeShift();await persist();schedule();
+    // Closing is a LOCAL action. Internet and server ACK are not required.
+    // The hook calls save(); a second awaited onChange ensures its new
+    // closed status reaches encrypted IndexedDB before we report success.
+    hooks.closeShift();
+    await onChange();
+    if(blocked)throw Error('Сохранение закрытой смены на устройстве не удалось');
+    schedule();
    }catch(e){updateStatus(String(e?.message||e))}
   }
  };
