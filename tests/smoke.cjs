@@ -5,7 +5,7 @@ const assert=require('node:assert/strict');
 
 function source(path){return fs.readFileSync(path,'utf8')}
 const html=source('work.html');
-const inline=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].map(x=>x[1]);
+const inline=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(x=>x[1]);
 assert.equal(inline.length,1,'Exactly one inline script is expected');
 for(const path of ['pwa-work-client.js','secure-work-store.js','pwa-relay-transport.js','pwa-owner-sync.js','sw.js']){
  new vm.Script(source(path),{filename:path});
