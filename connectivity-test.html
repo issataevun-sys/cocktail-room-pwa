@@ -11,9 +11,10 @@ a{display:block;margin-top:8px;word-break:break-all}
 <p>Проверка только тестового Apps Script без чтения и записи данных. Попробуем обычный HTTPS и альтернативное получение публичного тестового ответа.</p>
 <input id="url" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
 <button id="check">Проверить соединение</button><pre id="result">Ожидание проверки</pre>
-<a id="direct" style="display:none" target="_blank" rel="noopener noreferrer">Открыть ответ Google напрямую</a>
+<a id="direct" style="display:none" target="_blank" rel="noopener noreferrer">Открыть обычный ответ Google</a>
+<a id="jsonpDirect" style="display:none" target="_blank" rel="noopener noreferrer">Открыть JSONP-ответ Google</a>
 <script>
-const field=document.getElementById('url'),out=document.getElementById('result'),direct=document.getElementById('direct');
+const field=document.getElementById('url'),out=document.getElementById('result'),direct=document.getElementById('direct'),jsonpDirect=document.getElementById('jsonpDirect');
 try{field.value=sessionStorage.getItem('cr-test-url')||''}catch(_){}
 function target(){
  const u=new URL(field.value.trim());
@@ -38,6 +39,8 @@ document.getElementById('check').onclick=async()=>{
  try{u=target()}catch(e){out.textContent=String(e.message||e);return}
  try{sessionStorage.setItem('cr-test-url',field.value.trim())}catch(_){}
  direct.href=u.href;direct.style.display='block';
+ const p=new URL(u.href);p.searchParams.set('callback','__crProbe_debug');
+ jsonpDirect.href=p.href;jsonpDirect.style.display='block';
  let reason='';
  out.textContent='1/2: проверка HTTPS…';
  try{
