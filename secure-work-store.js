@@ -3,6 +3,7 @@
 (function(){
  const DB_NAME='cocktail-room-secure-v1',STORE='encrypted',ENCODER=new TextEncoder(),DECODER=new TextDecoder();
  let key=null,salt=null,writeQueue=Promise.resolve();
+ const TRUSTED_ID='trusted-owner-key-v1';
  const bytes=a=>Array.from(new Uint8Array(a));
  const buffer=a=>new Uint8Array(a).buffer;
  function open(){
@@ -27,6 +28,69 @@
    tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error||new Error('Локальное сохранение прервано'));
    tx.onerror=()=>reject(tx.error||new Error('Ошибка записи'));
   })}finally{db.close()}
+ }
+ async function removeRecord(id){
+  const db=await open();
+  try{await new Promise((resolve,reject)=>{
+   const tx=db.transaction(STORE,'readwrite');
+   tx.objectStore(STORE).delete(id);
+   tx.oncomplete=resolve;
+   tx.onabort=()=>reject(tx.error||new Error('Не удалось отменить доверие'));
+   tx.onerror=()=>reject(tx.error||new Error('Ошибка записи'));
+  })}finally{db.close()}
+ }
+ async function trustedDeviceEnabled(){
+  const record=await read(TRUSTED_ID);
+  return !!(record?.cryptoKey&&record?.format===1);
+ }
+ async function trustDevice(){
+  if(!key||!salt)throw Error('Сначала разблокируй хранилище прежней фразой');
+  // Enrollment and actual encrypted workspace must already be present:
+  // never authorize an unregistered or empty browser as an owner device.
+  const config=await loadNamed('pilot-config');
+  const state=await loadNamed('pilot-work');
+  if(!config?.deviceId||!config?.deviceSecret||!config?.roomEncryptionKey||
+      !state?.payload?.state)throw Error('Сначала подключи устройство владельца');
+  if(key.extractable!==false||key.algorithm?.name!=='AES-GCM')
+   throw Error('Ключ устройства не соответствует требованиям безопасности');
+  // A non-extractable CryptoKey is structured-cloned by IndexedDB; the
+  // plaintext passphrase is NEVER saved in localStorage/IndexedDB.
+  await write({id:TRUSTED_ID,format:1,cryptoKey:key,salt:bytes(salt),
+   enabledAt:new Date().toISOString()});
+  return true;
+ }
+ async function forgetTrustedDevice(){
+  await removeRecord(TRUSTED_ID);
+  return true;
+ }
+ async function autoUnlockTrusted(){
+  if(key)return true;
+  const saved=await read(TRUSTED_ID);
+  if(!saved)return false;
+  if(saved.format!==1||saved.cryptoKey?.type!=='secret'||
+     saved.cryptoKey?.algorithm?.name!=='AES-GCM'||
+     saved.cryptoKey.extractable!==false||
+     !Array.isArray(saved.cryptoKey.usages)||
+     !saved.cryptoKey.usages.includes('decrypt')||
+     !saved.cryptoKey.usages.includes('encrypt')||
+     !Array.isArray(saved.salt))return false;
+  // Try decrypting the owner-pairing record BEFORE enabling any key.
+  // Corrupt/missing records fall back to the existing password route.
+  const config=await read('pilot-config'),workspace=await read('pilot-work');
+  if(!config||!workspace||JSON.stringify(config.salt)!==JSON.stringify(saved.salt)||
+     JSON.stringify(workspace.salt)!==JSON.stringify(saved.salt))return false;
+  try{
+   const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(config.iv)},
+     saved.cryptoKey,new Uint8Array(config.data));
+   const parsed=JSON.parse(DECODER.decode(plain));
+   if(!parsed?.deviceId||!parsed?.roomEncryptionKey||!parsed?.deviceSecret)return false;
+   const workspacePlain=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(workspace.iv)},
+     saved.cryptoKey,new Uint8Array(workspace.data));
+   const work=JSON.parse(DECODER.decode(workspacePlain));
+   if(!work?.payload?.state)return false;
+  }catch(e){return false}
+  key=saved.cryptoKey;salt=new Uint8Array(saved.salt);
+  return true;
  }
  async function derive(secret,s){
   if(typeof secret!=='string'||secret.length<12)throw new Error('Для локального шифрования нужна фраза от 12 символов');
@@ -73,5 +137,5 @@
   const clear=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(record.iv)},key,new Uint8Array(record.data));
   return JSON.parse(DECODER.decode(clear));
  }
- window.CRWorkStore={unlock,save,saveNamed,loadNamed,hasSnapshot:async()=>!!(await read()),isUnlocked:()=>!!key,lock:()=>{key=null;salt=null}};
+ window.CRWorkStore={unlock,autoUnlockTrusted,trustDevice,forgetTrustedDevice,trustedDeviceEnabled,save,saveNamed,loadNamed,hasSnapshot:async()=>!!(await read()),isUnlocked:()=>!!key,lock:()=>{key=null;salt=null}};
 })();

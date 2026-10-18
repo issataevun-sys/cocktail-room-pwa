@@ -1,4 +1,4 @@
-const CACHE='cocktail-room-shell-v26';
+const CACHE='cocktail-room-shell-v27';
 const PREFIX='cocktail-room-shell-';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icon.svg','./work.html','./pwa-work-client.js','./secure-work-store.js','./pwa-relay-transport.js','./pwa-workspace-merge.js','./pwa-owner-sync.js'];
 const FILES=new Set(['','index.html','manifest.webmanifest','icon.svg','work.html','pwa-work-client.js','secure-work-store.js','pwa-relay-transport.js','pwa-workspace-merge.js','pwa-owner-sync.js']);

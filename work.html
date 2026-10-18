@@ -91,7 +91,7 @@ body.pilot-active .sync-top .tag{background:#f4f5f6}
 </style><meta name="theme-color" content="#171d22"><link rel="icon" href="./icon.svg" type="image/svg+xml">
 </head>
 <body>
-<div class="shell"><aside class="side"><div class="logo">COCKTAIL ROOM<small>PWA v1.3 · выборочная очистка</small></div>
+<div class="shell"><aside class="side"><div class="logo">COCKTAIL ROOM<small>PWA v1.4 · доверенные устройства</small></div>
 <nav><button class="active" data-tab="home">Обзор</button><button data-tab="shifts">Текущая смена</button><button data-tab="past">Прошлые смены</button><button data-tab="guests">Гости</button><button data-tab="lists">Списки</button><button data-tab="system">Система</button></nav>
 <div class="sidefoot">Режим владельца · зашифрованная локальная копия<br>Синхронизация при наличии интернета</div></aside>
 <main><header><div><div class="sub">COCKTAIL ROOM / OWNER</div><h1 id="title">Обзор</h1></div><div class="header-meta"><time id="header-clock">--:--</time><span class="pill" id="server">Проверка…</span></div></header>
@@ -1202,6 +1202,35 @@ function pilotPastRender(){
    '<p class="muted">Кальянов нет</p>')+'</div>',true);
  });
 }
+/** Trusted-device status is never assumed: each browser opts in separately. */
+async function paintOwnerTrustPanel(){
+ const root=$('owner-trust-panel');
+ if(!root||!window.CRPilot?.isActive())return;
+ root.innerHTML='<h3 style="margin:0 0 7px">Вход на этом устройстве</h3>'+
+  '<p class="muted">Проверяем локальную защиту…</p>';
+ try{
+  const enabled=await window.CRWorkStore.trustedDeviceEnabled();
+  const parent=$('owner-trust-panel');if(!parent)return;
+  parent.innerHTML='<h3 style="margin:0 0 7px">Вход на этом устройстве</h3>'+
+   (enabled?'<p>Доверенное устройство · автоматический вход включён.</p>'+
+     '<button type="button" class="danger" id="owner-trust-disable">Отключить автоматический вход</button>':
+    '<p class="muted">Включи один раз на своём iPhone или Windows. После этого MANAGEMENT будет открываться без повторного ввода фразы. Не включай на общем iPad сотрудников: любой, кто разблокировал устройство, сможет открыть OWNER.</p>'+
+     '<button type="button" class="primary" id="owner-trust-enable">Доверять этому устройству</button>')+
+   '<p id="owner-trust-message" class="muted"></p>';
+  if($('owner-trust-enable'))$('owner-trust-enable').onclick=()=>appConfirm(
+   'Запомнить защищённый ключ на этом устройстве? Любой, кто разблокирует устройство, сможет открыть MANAGEMENT без фразы шифрования.',async()=>{
+    const btn=$('owner-trust-enable');if(btn)btn.disabled=true;
+    try{await window.CRWorkStore.trustDevice();await paintOwnerTrustPanel()}
+    catch(e){const msg=$('owner-trust-message');if(msg)msg.textContent=String(e?.message||e);if(btn)btn.disabled=false}
+   });
+  if($('owner-trust-disable'))$('owner-trust-disable').onclick=()=>appConfirm(
+   'Отключить автоматический вход на этом устройстве? Следующий запуск снова запросит фразу шифрования.',async()=>{
+    const btn=$('owner-trust-disable');if(btn)btn.disabled=true;
+    try{await window.CRWorkStore.forgetTrustedDevice();await paintOwnerTrustPanel()}
+    catch(e){const msg=$('owner-trust-message');if(msg)msg.textContent=String(e?.message||e);if(btn)btn.disabled=false}
+   });
+ }catch(e){const msg=$('owner-trust-panel');if(msg)msg.textContent='Не удалось проверить устройство: '+String(e?.message||e)}
+}
 /** Owner-selected cleanup. No labels, names, or dates are used to guess what is a test. */
 function showPilotCleanup(){
  if(!window.CRPilot?.isActive())return toast('Сначала подключи смену владельца');
@@ -1402,8 +1431,8 @@ if(tab==='guests'){
 if(tab==='system'){
  if(syncMode==='pilot'){
   const activePilot=openShift();
-  root.innerHTML='<div class="box"><h2>Смена владельца · PWA</h2>'+
-   '<p class="muted">Шифрованная синхронизация отдельного снимка. Пока не связано с iiko и рабочими листами заказов.</p><div id="pilot-sys"></div></div>';
+  root.innerHTML='<div class="box"><h2>COCKTAIL ROOM · MANAGEMENT</h2>'+
+   '<p class="muted">Рабочая зашифрованная база смен с синхронизацией устройств. Чеки iiko и отдельные листы заказов пока не подключены.</p><div id="pilot-sys"></div></div>';
   const area=$('pilot-sys');
   if(activePilot){
    area.innerHTML='<p><strong>Открыта · '+esc(displayDate(activePilot.day))+'</strong></p><p>'+esc(window.CRPilot?.label()||'')+'</p>'+
@@ -1419,6 +1448,8 @@ if(tab==='system'){
     window.CRPilot?.openShift({day:String(fd.get('day')||''),waiter:String(fd.get('waiter')||'')});
    };
   }
+  area.insertAdjacentHTML('beforeend','<div id="owner-trust-panel" style="border-top:1px solid #e0e4e6;margin-top:14px;padding-top:12px"></div>');
+  paintOwnerTrustPanel();
   area.insertAdjacentHTML('beforeend','<div style="border-top:1px solid #e0e4e6;margin-top:14px;padding-top:12px">'+
    '<button type="button" class="danger" id="pilot-cleanup-open">Очистить тестовые записи…</button>'+ 
    '<p class="muted">Только ручной выбор, перед удалением создаётся резервная копия.</p></div>');

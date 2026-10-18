@@ -7,8 +7,8 @@
  overlay.style.cssText='position:fixed;inset:0;z-index:99999;display:grid;align-items:start;justify-items:center;overflow-y:auto;background:#0e1721c9;padding:16px;font-family:Arial,sans-serif';
  overlay.innerHTML='<div style="background:white;max-width:490px;width:100%;border-radius:15px;padding:22px;box-shadow:0 15px 55px #0004">'+
  '<h2 style="margin:0 0 12px">COCKTAIL ROOM · MANAGEMENT</h2>'+
- '<p style="line-height:1.5;color:#596975">Разблокируй защищённое хранилище, затем подключи устройство владельца ниже. Интернет нужен для первого подключения; после этого смена работает и без сети.</p>'+
- '<details style="border:1px solid #e4e8ea;border-radius:8px;padding:8px 10px;margin:10px 0"><summary>Старое Google-подключение (не для MANAGEMENT)</summary>'+ 
+ '<p style="line-height:1.5;color:#596975">Доверенное устройство открывает MANAGEMENT автоматически. При первом входе введи фразу шифрования и подтверди устройство один раз. Офлайн-работа сохраняется.</p>'+
+ '<details style="display:none;border:1px solid #e4e8ea;border-radius:8px;padding:8px 10px;margin:10px 0"><summary>Старое Google-подключение (не для MANAGEMENT)</summary>'+ 
  '<label style="display:block;margin-bottom:12px">Адрес Google Apps Script<input id="cr-owner-url" type="url" style="box-sizing:border-box;width:100%;padding:12px;border:1px solid #d1d8dc;border-radius:8px;margin-top:6px" placeholder="https://script.google.com/macros/s/.../dev"></label>'+
  '<p id="cr-gate-status" style="color:#7a4c25;font-size:13px">Ожидаем подключения</p>'+
  '<button id="cr-connect" style="padding:12px 20px;background:#18242b;color:white;border:0;border-radius:9px">Подключиться через Google</button>'+
@@ -17,7 +17,7 @@
  '<label>Фраза для шифрования локальной копии (от 12 символов)<input id="cr-offline-secret" type="password" style="box-sizing:border-box;width:100%;padding:11px;border:1px solid #d1d8dc;border-radius:8px;margin-top:5px" autocomplete="new-password"></label>'+
  '<button id="cr-secure-cache" style="margin-top:8px;padding:9px 12px">Разблокировать защищённое хранилище</button>'+
  '<div id="cr-local-preview" style="font-size:12px;color:#5a6c77;margin-top:9px"></div>'+
- '<details style="margin-top:12px"><summary style="font-size:12px">Старая локальная тестовая смена</summary><button id="cr-continue-offline" disabled style="margin-top:10px;padding:10px 12px">Продолжить сохранённую смену офлайн</button>'+ 
+ '<details style="display:none;margin-top:12px"><summary style="font-size:12px">Старая локальная тестовая смена</summary><button id="cr-continue-offline" disabled style="margin-top:10px;padding:10px 12px">Продолжить сохранённую смену офлайн</button>'+ 
  '<button id="cr-test-offline" style="margin:10px 0 0 8px;padding:10px 12px">Новая тестовая офлайн-смена</button></details></div>'+
  '<p style="font-size:12px;color:#7c8892;margin-top:15px">Смена MANAGEMENT сохраняется зашифрованной на устройстве и отправляется в Google Sheets при восстановлении связи. Не удаляй приложение с неотправленными изменениями.</p></div>';
  const enableOffline=document.createElement('button');
@@ -138,8 +138,25 @@
    gate('Google подтвердил вход, но Chrome не передал сообщение между окнами. Это ограничение текущего моста. Нажми «Открыть рабочую версию» — она продолжит работать без повторного ввода данных.');
   },14000);
  };
+ async function tryTrustedResume(){
+  const status=document.getElementById('cr-local-preview');
+  try{
+   if(!window.CRWorkStore?.autoUnlockTrusted||!window.CRPilot?.resume)return;
+   const unlocked=await window.CRWorkStore.autoUnlockTrusted();
+   if(!unlocked)return;
+   if(status)status.textContent='Доверенное устройство · восстанавливаем смену…';
+   await window.CRPilot.resume();
+   if(status)status.textContent='';
+  }catch(error){
+   // Never remove keys or clear IndexedDB when auto-entry fails.
+   // Keep password and manual recovery fully available.
+   if(status)status.textContent='Автовход недоступен: '+String(error?.message||error)+
+    '. Введи фразу шифрования и открой сохранённую смену.';
+  }
+ }
  const start=()=>{
   document.body.append(overlay);document.body.append(toolbar);document.body.append(enableOffline);
+  Promise.resolve().then(tryTrustedResume);
   enableOffline.onclick=()=>{
    if(!connected)return;
    document.getElementById('cr-gate-status').textContent='Задай фразу для зашифрованной копии. Google-сессия остаётся подключённой.';

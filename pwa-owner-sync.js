@@ -408,6 +408,7 @@
  }
  window.CRPilot={
   bind:obj=>{hooks=obj},isActive:()=>active,onChange,refresh,flush,cleanupSelected,
+  resume:async()=>{if(active)return true;await activate(null);return active;},
   label:()=>statusText,
   openShift:async args=>{
    if(!active||!hooks)return;
