@@ -34,7 +34,7 @@ function rig(shared={revision:0,payload:null,ops:new Map()},stored=new Map()){
     shared.payload=clone(packet.payload);
     shared.ops.set(packet.operation,{confirmed:true,revision:shared.revision,status:'saved'});
    }
-   if(pauseSave){const done=pauseSave;pauseSave=null;waitForFirst?.();await done}
+   if(pauseSave){const holding=pauseSave;pauseSave=null;waitForFirst?.();await holding.promise}
    return{ok:true,revision:shared.ops.get(packet.operation).revision}
   },
   receipt:async op=>shared.ops.get(op)||{confirmed:false}
@@ -71,8 +71,10 @@ function rig(shared={revision:0,payload:null,ops:new Map()},stored=new Map()){
    const triggered=new Promise(resolve=>ready=resolve);
    startedSave=()=>ready();
    waitForFirst=startedSave;
-   const pending=new Promise(resolve=>pauseSave=resolve);
-   return{triggered,release:()=>pauseSave?.()||null};
+   let release;
+   const pending=new Promise(resolve=>release=resolve);
+   pauseSave={promise:pending,release};
+   return{triggered,release};
   }
  };
 }
