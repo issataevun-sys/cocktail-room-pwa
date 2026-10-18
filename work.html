@@ -567,8 +567,8 @@ function setupGuestPhoneInput(input){
   const text=input.value, digits=text.replace(/\D/g,'');
   if(!text||text==='+')return;
   // Format conventional Kazakhstan numbers, leave unusual numbers intact for confirmation.
-  if(/^\+?7[\d\s()-]*$/.test(text)||/^8\d{10}$/.test(digits)){
-   input.value=formatKzPhone(text)||'+7 ';
+  if(/^\+7[\d\s()-]*$/.test(text)){
+   const formatted=formatKzPhone(text);if(formatted)input.value=formatted;
   }
  });
 }
