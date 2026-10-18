@@ -285,8 +285,8 @@
    if(new Set(values).size!==values.length)throw Error('Повторное выделение записи');
    return new Set(values);
   };
-  const shifts=pick('shiftIds'),orders=pick('orderIds'),guests=pick('guestIds');
-  if(!shifts.size&&!orders.size&&!guests.size)throw Error('Сначала отметь записи для удаления');
+  const shifts=pick('shiftIds'),orders=pick('orderIds'),guests=pick('guestIds'),bookings=pick('bookingIds');
+  if(!shifts.size&&!orders.size&&!guests.size&&!bookings.size)throw Error('Сначала отметь записи для удаления');
   const arr=x=>Array.isArray(x)?x:[];
   const allShifts=arr(state.shifts),allOrders=arr(state.hookahs);
   for(const id of shifts){
@@ -296,12 +296,14 @@
   }
   for(const id of orders)if(!allOrders.some(x=>x.id===id))
    throw Error('Кальян уже изменился. Открой очистку заново.');
+  for(const id of bookings)if(!arr(state.bookings).some(x=>x.id===id))
+   throw Error('Бронь уже изменилась. Открой очистку заново.');
   const guestRows=arr(snapshot.guests).concat(arr(state.guests));
   for(const id of guests)if(!guestRows.some(x=>x.id===id))
    throw Error('Гость уже изменился. Открой очистку заново.');
   const removeOrder=o=>orders.has(o.id)||shifts.has(o.shiftId);
   const retainedOrders=allOrders.filter(o=>!removeOrder(o));
-  const retainedBookings=arr(state.bookings).filter(b=>!shifts.has(b.shiftId));
+  const retainedBookings=arr(state.bookings).filter(b=>!shifts.has(b.shiftId)&&!bookings.has(b.id));
   for(const id of guests){
    const g=guestRows.find(x=>x.id===id);
    const usesGuest=o=>o.guestId===id||o.guestID===id||
@@ -313,6 +315,7 @@
   if(!Array.isArray(result.state.shifts)||!Array.isArray(result.state.hookahs))
    throw Error('Неизвестная структура базы, очистка остановлена');
   const removed={shifts:shifts.size,hookahs:allOrders.filter(removeOrder).length,
+   bookings:arr(state.bookings).filter(b=>shifts.has(b.shiftId)||bookings.has(b.id)).length,
    guests:arr(snapshot.guests).filter(g=>guests.has(g.id)).length+
     arr(state.guests).filter(g=>guests.has(g.id)).length};
   for(const key of ['shifts','hookahs','tables','bookings','washings','vipHours']){
@@ -320,6 +323,7 @@
    result.state[key]=result.state[key].filter(x=>
     key==='shifts'?!shifts.has(x.id):
     key==='hookahs'?!removeOrder(x):
+    key==='bookings'?(!shifts.has(x.shiftId)&&!bookings.has(x.id)):
     !shifts.has(x.shiftId));
   }
   if(Array.isArray(result.state.guests))
