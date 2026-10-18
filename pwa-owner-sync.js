@@ -7,7 +7,7 @@
 (function(){
  const STORE=()=>window.CRWorkStore;
  let hooks=null,transport=null,local=null,active=false,busy=false,blocked=false;
- let config=null,saveChain=Promise.resolve(),timer=null,lastError='',statusText='Офлайн · ожидает соединения',refreshing=false;
+ let config=null,saveChain=Promise.resolve(),timer=null,lastError='',statusText='Офлайн · ожидает соединения',refreshing=false,lastServerConfirmed=false;
  const EMPTY=()=>({state:{shifts:[],hookahs:[],tables:[],bookings:[],washings:[],vipHours:[],guests:[]},shiftId:'',guests:[],lists:null});
  const clone=o=>JSON.parse(JSON.stringify(o));
  const stamp=()=>new Date().toLocaleTimeString('ru-RU');
@@ -22,7 +22,7 @@
     lastError?'Ожидание · '+lastError:
     busy?'Синхронизация…':
     local?.dirty?'Ожидает отправки · '+stamp():
-    'Онлайн · синхронизировано';
+    lastServerConfirmed?'Онлайн · синхронизировано':'Ожидаем подтверждения связи';
   hooks?.updateStatus({dirty:!!local?.dirty,error:lastError});
   showMessage('Статус: '+statusText);
  }
@@ -46,43 +46,159 @@
   try{await persist();updateStatus('');schedule()}
   catch(error){blocked=true;updateStatus('Ошибка локальной записи: '+String(error?.message||error))}
  }
+ function ensureBase(){
+  // Old versions stored no base. A clean local snapshot is a valid baseline;
+  // dirty data without a baseline is NOT safe to merge automatically.
+  if(local&&!local.base&&!local.dirty)local.base=clone(local.payload);
+ }
+ async function confirmPending(receipt){
+  if(!local?.pending||!receipt?.confirmed||receipt.status!=='saved')return false;
+  const acked=Number(receipt.revision);
+  if(!Number.isInteger(acked)||acked<local.revision)return false;
+  const fullyAcked=Number.isInteger(local.pendingGeneration)&&
+    local.pendingGeneration===local.generation;
+  let oldSent=local.pendingState||(fullyAcked?clone(local.payload):null);
+  if(!oldSent){
+   // Previous app versions did not persist pendingState. The exact
+   // acknowledged snapshot can still be recovered if the server has not
+   // moved past the receipt's revision.
+   try{
+    const verified=await transport.load();
+    if(verified.revision===acked&&verified.state)oldSent=clone(verified.state);
+   }catch(e){}
+  }
+  if(!oldSent){
+   blocked=true;
+   updateStatus('Не удалось восстановить исходный снимок отправки. Нужна ручная сверка.');
+   return false;
+  }
+  // Move the baseline to the exact data that the server acknowledged.
+  local.base=clone(oldSent);
+  local.revision=acked;
+  local.pending=null;
+  local.pendingState=null;
+  local.pendingGeneration=null;
+  if(fullyAcked)local.dirty=false;
+  await persist();
+  return true;
+ }
+ async function reconcile(remote){
+  if(!remote||!Number.isInteger(remote.revision)||remote.revision<local.revision)
+   throw Error('Сервер вернул недопустимую версию');
+  if(remote.revision===local.revision){lastError='';updateStatus('');return true;}
+  if(!remote.state||!remote.state.state)
+   throw Error('Сервер вернул неполную копию смены');
+  if(!local.dirty){
+   // Do not allow an in-flight refresh to overwrite a newly created local edit.
+   if(local.pending)throw Error('Есть неподтверждённая запись');
+   local.payload=clone(remote.state);
+   local.revision=remote.revision;
+   local.base=clone(remote.state);
+   local.generation=0;
+   local.conflicts=[];
+   hooks.applySnapshot(local.payload,local.revision,false);
+   await persist();
+   updateStatus('');
+   return true;
+  }
+  if(!local.base){
+   blocked=true;local.conflicts=[{path:'',reason:'no_common_baseline'}];
+   await persist();
+   updateStatus('Нет общей исходной версии. Нужна ручная сверка.');
+   return false;
+  }
+  const result=window.CRWorkspaceMerge.merge(local.base,local.payload,remote.state);
+  if(!result.ok){
+   blocked=true;
+   local.conflicts=result.conflicts.map(x=>({path:x.path,reason:x.reason}));
+   await persist();
+   updateStatus('Найдены пересекающиеся изменения: '+local.conflicts.length+
+    '. Все локальные данные сохранены, сервер не перезаписан.');
+   return false;
+  }
+  const combined=clone(result.merged);
+  const differs=JSON.stringify(combined)!==JSON.stringify(remote.state);
+  local.payload=combined;
+  local.revision=remote.revision;
+  local.base=clone(remote.state);
+  local.pending=null;
+  local.pendingState=null;
+  local.pendingGeneration=null;
+  local.dirty=differs;
+  local.generation=(Number(local.generation)||0)+1;
+  local.conflicts=[];
+  // Reflect the merged state synchronously, before the first async save.
+  hooks.applySnapshot(local.payload,local.revision,local.dirty);
+  await persist();
+  updateStatus('');
+  if(local.dirty)schedule();
+  return true;
+ }
+ async function reconcileConflict(){
+  try{
+   // Read the receipt before abandoning an ambiguous no-CORS POST.
+   if(local.pending){
+    const receipt=await transport.receipt(local.pending.operation);
+    if(receipt?.confirmed){
+     if(!await confirmPending(receipt))return false;
+    }else{
+     // A confirmed server revision different from our CAS base guarantees
+     // that this unacknowledged POST cannot win the old revision.
+     const latest=await transport.load();
+     if(latest.revision<=Number(local.pending.base))
+      return false; // Network race; retry the original ID instead.
+     local.pending=null;
+     local.pendingState=null;
+     local.pendingGeneration=null;
+     await persist();
+     return reconcile(latest);
+    }
+   }
+   const current=await transport.load();
+   if(current.revision===local.revision)return true;
+   return reconcile(current);
+  }catch(e){
+   updateStatus('Проверка конфликта: '+String(e?.message||e));
+   return false;
+  }
+ }
  async function flush(){
   if(!active||busy||blocked||!local?.dirty||!local.payload.shiftId)return;
   if(!navigator.onLine){updateStatus('Нет интернета');return}
   busy=true;updateStatus('');
   try{
    await saveChain;
-   let submitted=null;
-   if(local.pending){
-    submitted=local.pending;
-   }else{
-    // Capture both the content and its generation BEFORE asynchronous encryption.
-    // An edit arriving while POST/ACK is running must remain in the outbox.
+   // Before creating a new operation, check whether another device wrote.
+   // The CAS on the Apps Script server remains the final race protection.
+   if(!local.pending){
+    const latest=await transport.load();
+    lastServerConfirmed=true;
+    if(!await reconcile(latest))return;
+    if(!local.dirty)return;
+   }
+   let submitted=local.pending;
+   if(!submitted){
     const generation=local.generation;
     const snapshot=clone(local.payload);
     submitted=await transport.prepare(snapshot.shiftId,local.revision,snapshot);
     local.pending=submitted;
+    local.pendingState=snapshot;
     local.pendingGeneration=generation;
-    await persist();
+    await persist(); // durable envelope BEFORE network
    }
    const result=await transport.submit(submitted);
    if(result.conflict){
-    blocked=true;updateStatus('На сервере другая версия. Локальные изменения не потеряны.');
+    // A competing device won; use conservative three-way merge.
+    await reconcileConflict();
     return;
    }
    if(!result.ok){
     updateStatus(result.error||'Нет подтверждения сервера');
     return;
    }
-   local.revision=result.revision;
-   // Older local records might not have pendingGeneration. In that case a
-   // conservative extra send is safer than discarding unsent changes.
-   const fullyAcknowledged=Number.isInteger(local.pendingGeneration)&&
-     local.pendingGeneration===local.generation;
-   local.pending=null;
-   local.pendingGeneration=null;
-   if(fullyAcknowledged)local.dirty=false;
-   await persist();
+   const receipt={confirmed:true,status:'saved',revision:result.revision};
+   if(!await confirmPending(receipt))return;
+   lastServerConfirmed=true;
    updateStatus('');
   }catch(error){updateStatus(String(error?.message||error))}
   finally{
@@ -99,20 +215,14 @@
   refreshing=true;
   try{
    const remote=await transport.load();
-   if(remote.revision===local.revision){lastError='';updateStatus('');return}
-   if(remote.revision<local.revision)throw Error('Сервер вернул более старую версию');
-   if(!remote.state)throw Error('Пустой ответ сервера после сохранения');
-   // Never overwrite unsent edits.
-   if(local.dirty){blocked=true;updateStatus('Изменения с другого устройства');return}
-   local={payload:remote.state,revision:remote.revision,dirty:false,pending:null,generation:0};
-   await persist();
-   hooks.applySnapshot(local.payload,local.revision,false);
-   updateStatus('');
+   lastServerConfirmed=true;
+   await reconcile(remote);
   }catch(error){updateStatus(String(error?.message||error))}
   finally{refreshing=false;}
  }
  async function activate(given){
   if(!hooks)throw Error('Экран смены ещё не готов');
+  if(!window.CRWorkspaceMerge)throw Error('Отсутствует модуль безопасного объединения');
   if(!STORE()?.isUnlocked())throw Error('Сначала разблокируй зашифрованное хранилище');
   const old=await STORE().loadNamed('pilot-config');
   config=given||old;
@@ -126,43 +236,37 @@
   if(navigator.onLine){
    await transport.ping();
    remote=await transport.load();
+   lastServerConfirmed=true;
   }else if(!saved)throw Error('Для первого подключения нужен интернет');
   if(saved){
    local=saved;
-   // The previous POST might have succeeded even if Safari was closed before
-   // its opaque response was confirmed. Check the durable operation receipt.
-   if(remote&&remote.revision>local.revision&&local.dirty&&local.pending){
-    let receipt=null;
-    try{receipt=await transport.receipt(local.pending.operation);}catch(e){}
-    if(receipt?.confirmed&&Number.isInteger(Number(receipt.revision))){
-     local.revision=Number(receipt.revision);
-     const fullyAcknowledged=Number.isInteger(local.pendingGeneration)&&
-       local.pendingGeneration===local.generation;
-     local.pending=null;
-     local.pendingGeneration=null;
-     if(fullyAcknowledged)local.dirty=false;
-     await persist();
-    }
+   // A previously detected same-record conflict survives app restarts.
+   if(Array.isArray(local.conflicts)&&local.conflicts.length){
+    blocked=true;
+    lastError='Есть нерешённый конфликт: '+local.conflicts.map(c=>c.path).join(', ').slice(0,180);
    }
-   if(remote&&remote.revision>local.revision){
-    if(local.dirty){
-     blocked=true;lastError='Конфликт: на сервере новая версия';
-    }else if(remote.state){
-     local={payload:remote.state,revision:remote.revision,dirty:false,pending:null,generation:0};
-     await persist();
-    }
+   ensureBase();
+   if(!blocked&&remote&&local.pending&&remote.revision>local.revision){
+    let receipt=null;
+    try{receipt=await transport.receipt(local.pending.operation)}catch(e){}
+    if(receipt?.confirmed)await confirmPending(receipt);
+   }
+   if(!blocked&&remote&&remote.revision>local.revision){
+    await reconcile(remote);
    }
   }else{
    local=remote?.state?
-    {payload:remote.state,revision:remote.revision,dirty:false,pending:null,generation:0}:
-    {payload:EMPTY(),revision:0,dirty:false,pending:null,generation:0};
+    {payload:clone(remote.state),base:clone(remote.state),revision:remote.revision,
+      dirty:false,pending:null,generation:0,conflicts:[]}:
+    {payload:EMPTY(),base:EMPTY(),revision:0,dirty:false,pending:null,
+      generation:0,conflicts:[]};
    await persist();
   }
   if(given)await STORE().saveNamed('pilot-config',config);
   hooks.applySnapshot(local.payload,local.revision,!!local.dirty);
   active=true;
   window.CRPWA.enterPilotMode();
-  // No secrets remain in the browser inputs.
+  // Never print or send enrollment secrets in logs or to GitHub.
   ['pilot-device-secret','pilot-room-key'].forEach(id=>{
    const field=document.getElementById(id);if(field)field.value='';
   });
@@ -180,8 +284,8 @@
   const panel=document.createElement('section');
   panel.style.cssText='border-top:1px solid #e0e5e8;padding-top:13px;margin-top:18px;font-size:13px;color:#364c58';
   panel.innerHTML='<h3 style="margin:0 0 8px">Смена владельца · синхронизация PWA</h3>'+
-   '<p style="font-size:12px">Отдельное защищённое подключение. Пока только схема зала и кальяны — без записи в рабочие заказы iiko. Ранее созданная офлайн-смена сохранится отдельно.</p>'+
-   '<label>Тестовое развёртывание Apps Script /exec<input id="pilot-endpoint" type="url" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px"></label>'+
+   '<p style="font-size:12px">Две установки MANAGEMENT с одной зашифрованной базой. Независимые изменения объединяются; пересекающиеся блокируются до ручной сверки. Данные пока не отражаются в iiko.</p>'+
+   '<label>Развёртывание Apps Script /exec<input id="pilot-endpoint" type="url" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px"></label>'+
    '<label>ID устройства владельца<input id="pilot-device-id" autocapitalize="off" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px"></label>'+
    '<label>Личный секрет устройства<input id="pilot-device-secret" type="password" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px"></label>'+
    '<label>Ключ шифрования комнаты<input id="pilot-room-key" type="password" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px"></label>'+
@@ -232,5 +336,5 @@
   if(active&&navigator.onLine&&!busy&&!blocked){
    if(local?.dirty)schedule();else refresh();
   }
- },45000);
+ },15000);
 })();

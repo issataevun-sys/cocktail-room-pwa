@@ -3,10 +3,12 @@ on:
   push:
     branches:
       - main
+      - feature/two-device-safe-merge-20261019
       - feature/shift-history-workflow-20261018
       - fix/offline-close-outbox-20261018
     paths:
       - work.html
+      - pwa-workspace-merge.js
       - pwa-owner-sync.js
       - pwa-relay-transport.js
       - secure-work-store.js
@@ -29,3 +31,4 @@ jobs:
         run: |
           node tests/smoke.cjs
           node tests/owner-sync.cjs
+          node tests/two-device.cjs

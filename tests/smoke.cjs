@@ -7,12 +7,12 @@ function source(path){return fs.readFileSync(path,'utf8')}
 const html=source('work.html');
 const inline=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(x=>x[1]);
 assert.equal(inline.length,1,'Exactly one inline script is expected');
-for(const path of ['pwa-work-client.js','secure-work-store.js','pwa-relay-transport.js','pwa-owner-sync.js','sw.js']){
+for(const path of ['pwa-work-client.js','secure-work-store.js','pwa-relay-transport.js','pwa-workspace-merge.js','pwa-owner-sync.js','sw.js']){
  new vm.Script(source(path),{filename:path});
 }
 new vm.Script(inline[0],{filename:'work.html:inline'});
-console.log('✓ Six JavaScript sources parse');
-for(const file of ['pwa-owner-sync.js','pwa-relay-transport.js','secure-work-store.js']){
+console.log('✓ All application JavaScript sources parse');
+for(const file of ['pwa-owner-sync.js','pwa-workspace-merge.js','pwa-relay-transport.js','secure-work-store.js']){
  assert.ok(html.includes('<script src="./'+file+'"></script>'),'Missing '+file);
 }
 assert.ok(html.includes("if(tab==='past'){if(syncMode==='pilot')pilotPastRender()"),'PWA history not wired');
