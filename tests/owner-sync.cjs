@@ -6,6 +6,7 @@
 const fs=require('node:fs');
 const assert=require('node:assert/strict');
 const source=fs.readFileSync('pwa-owner-sync.js','utf8');
+const merge=require('../pwa-workspace-merge.js');
 const clone=value=>JSON.parse(JSON.stringify(value));
 let nextOperation=0;
 function rig(shared={revision:0,payload:null,ops:new Map()},stored=new Map()){
@@ -19,7 +20,7 @@ function rig(shared={revision:0,payload:null,ops:new Map()},stored=new Map()){
   loadNamed:async key=>stored.has(key)?clone(stored.get(key)):null,
   saveNamed:async(key,value)=>{stored.set(key,clone(value))}
  };
- const window={CRWorkStore:deviceStore,CRPWA:{enterPilotMode(){}},
+ const window={CRWorkStore:deviceStore,CRWorkspaceMerge:merge,CRPWA:{enterPilotMode(){}},
   addEventListener:(name,fn)=>callbacks[name]=fn};
  let pauseSave=null,startedSave=null;
  let waitForFirst=null;
