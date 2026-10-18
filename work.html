@@ -68,7 +68,7 @@ input,select{width:100%;background:white;color:#192229;border:1px solid #d3d8dc;
 .flavor-group{padding:12px 0;border-bottom:1px solid #e4e8e9}.flavor-group summary{font-weight:700;cursor:pointer}.flavor-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:10px}.flavor-item{padding:8px;border:1px solid #edf0f1;border-radius:7px;font-size:13px}.flavor-item[hidden],.flavor-group[hidden]{display:none!important}@media(max-width:700px){.flavor-items{grid-template-columns:1fr}}
 .header-meta{display:flex;align-items:center;gap:12px}.header-meta time{font-variant-numeric:tabular-nums;font-weight:750;font-size:19px}.flavor-dynamic-row{display:flex;align-items:end;gap:8px}.flavor-dynamic-row label{flex:1}.modal-card p{white-space:pre-line}@media(max-width:600px){.header-meta time{font-size:15px}}
 .clearable-field{position:relative;display:block;width:100%;min-width:0}.clearable-field>input,.clearable-field>textarea,.clearable-field>select{width:100%;padding-right:44px!important}.clearable-field.has-picker>input,.clearable-field.has-picker>select{padding-right:68px!important}.field-clear{position:absolute;right:5px;top:50%;transform:translateY(-50%);height:32px;width:32px;min-height:32px;display:flex;align-items:center;justify-content:center;border:none!important;border-radius:7px;background:transparent;color:#77818a;padding:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent;z-index:2;font-size:22px;line-height:1}.field-clear:active{background:#edf0f2;color:#1c252c}.clearable-field.has-picker>.field-clear{right:31px}.field-clear[hidden]{display:none!important}@media(hover:hover){.field-clear:hover{background:#edf0f2;color:#1c252c}}
-.field-clear[hidden]{display:flex!important}.clearable-field.has-catalog>input{padding-right:77px!important}.clearable-field.has-catalog>.field-clear{right:40px!important}.catalog-arrow{position:absolute;right:3px;top:50%;transform:translateY(-50%);height:34px;width:34px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;font-size:23px;color:#54636c;padding:0;touch-action:manipulation}.catalog-popup{position:fixed;z-index:4000;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:white;border:1px solid #ccd2d7;border-radius:10px;box-shadow:0 10px 28px #0003;padding:4px}.catalog-item{display:block;width:100%;text-align:left;border:0;border-radius:6px;padding:12px;color:#253038;background:white;font-size:14px;min-height:43px;white-space:normal}.catalog-item:active{background:#e9eff2}.catalog-empty{padding:14px;color:#71808a;font-size:13px}
+.field-clear[hidden]{display:none!important}.clearable-field.has-catalog>input{padding-right:77px!important}.clearable-field.has-catalog>.field-clear{right:40px!important}.catalog-arrow{position:absolute;right:3px;top:50%;transform:translateY(-50%);height:34px;width:34px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;font-size:23px;color:#54636c;padding:0;touch-action:manipulation}.catalog-popup{position:fixed;z-index:4000;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:white;border:1px solid #ccd2d7;border-radius:10px;box-shadow:0 10px 28px #0003;padding:4px}.catalog-item{display:block;width:100%;text-align:left;border:0;border-radius:6px;padding:12px;color:#253038;background:white;font-size:14px;min-height:43px;white-space:normal}.catalog-item:active{background:#e9eff2}.catalog-empty{padding:14px;color:#71808a;font-size:13px}
 .wash-schedule-list{display:grid;gap:9px;max-height:55vh;overflow:auto}.wash-schedule-item{border:1px solid #e4e8eb;border-radius:9px;padding:10px}.wash-schedule-item strong{font-size:13px}.wash-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;margin-top:8px}.wash-days label{font-size:11px;display:flex;align-items:center;justify-content:center;gap:3px;flex-wrap:wrap}.wash-days input{width:17px;min-height:17px;height:17px;accent-color:#20282e}@media(max-width:560px){.wash-days{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .table-hookah-section{margin-top:18px;padding:13px;border-radius:12px}.table-hookah-section.current-hookahs{background:#f0f7f2;border:1px solid #cfe3d2}.table-hookah-section.completed-hookahs{background:#f5f5f5;border:1px solid #e0e2e3}.table-hookah-heading{display:flex;align-items:center;gap:9px;margin-bottom:12px}.table-hookah-heading h2{margin:0;font-size:17px}.table-hookah-count{font-size:12px;min-width:25px;text-align:center;border-radius:20px;padding:4px 7px;background:white;border:1px solid #d7ded9}.table-hookah-item{background:white;align-items:flex-start;flex-wrap:wrap}.table-hookah-details{flex:1;min-width:200px}.table-hookah-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px}.table-hookah-status{font-size:10px;font-weight:750;letter-spacing:.05em;padding:4px 7px;border-radius:5px}.table-hookah-status.is-current{background:#d9efdd;color:#196a36}.table-hookah-status.is-completed{background:#e8eaeb;color:#596168}.hookah-completed .table-hookah-details{opacity:.75}.table-hookah-actions{margin-top:0}
 .table-guest-buttons{display:flex;gap:7px;flex-wrap:wrap}.table-guest-buttons button{background:#f1f5f6;border-color:#cbd8df;color:#202a30;font-weight:600;padding:7px 11px;min-height:36px;touch-action:manipulation}
@@ -94,7 +94,8 @@ input::placeholder,textarea::placeholder{color:#949ea6;opacity:1;font-weight:400
 <script>
 'use strict';
 const storageKey='cocktail-room-htmlservice-demo-v06';
-const pendingKey='cocktail-room-live-sync-pending-v1';
+// Offline changes are stored exclusively in encrypted IndexedDB; legacy plaintext session keys are never read.
+
 let demoData=null,syncMode='loading',syncRevision=0,syncShiftId='',syncDirty=0,syncBusy=false,syncRetryTimer=null,syncError='',syncPendingGeneration=0;
 let lastServerOK=0,serverChecking=false,remoteRefreshAvailable=false,syncBaseState=null;
 const $=id=>document.getElementById(id);
@@ -205,7 +206,7 @@ function flushLiveSync(){
   syncBaseState=syncClone(confirmed);
   if(syncDirty===generation){
    data=syncClone(confirmed);
-   syncDirty=0;sessionStorage.removeItem(pendingKey);
+   syncDirty=0;
    if(res.merged&&tab==='shifts')paint();
   }else{
    const combined=syncThreeWay(body,data,confirmed);
@@ -237,7 +238,7 @@ function initLiveShift(){
   syncShiftId=res.shift?.id||'';syncRevision=Number(res.revision)||0;syncBaseState=res.state?syncClone(res.state):null;
   if(!res.shift){syncMode='none';data={shifts:[],hookahs:[],guests:[],tables:[],bookings:[],washings:[],vipHours:[]};paint();return}
   let pending=null;
-  try{pending=JSON.parse(sessionStorage.getItem(pendingKey)||'null')}catch(e){}
+  // Legacy sessionStorage data deliberately ignored: it may contain unencrypted guest details.
   if(pending&&pending.shiftId===syncShiftId){
    data=pending.state;syncDirty=1;
    if(pending.baseState)syncBaseState=pending.baseState;
@@ -247,7 +248,7 @@ function initLiveShift(){
   paint();renderSyncStatus();
   if(window.CRWorkStore?.isUnlocked())window.CRPWA.persistEncrypted();
  }).withFailureHandler(err=>{
-  let pending=null;try{pending=JSON.parse(sessionStorage.getItem(pendingKey)||'null')}catch(e){}
+  let pending=null;// Legacy sessionStorage data deliberately ignored: it may contain unencrypted guest details.
   if(pending&&pending.shiftId&&pending.state){
    syncMode='offline';syncShiftId=pending.shiftId;syncRevision=Number(pending.revision)||0;
    data=pending.state;syncDirty=1;
