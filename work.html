@@ -120,7 +120,8 @@ function save(){
 function renderSyncStatus(){
  const pill=$('server'),el=$('live-sync-status');
  let label='Проверка сервера…',cls='sync-pending';
- if(syncMode==='conflict'||remoteRefreshAvailable){label='Конфликт изменений';cls='sync-error'}
+ if(String(syncShiftId||'').startsWith('local-test-')){label='Локальная тестовая смена';cls='sync-pending';}
+ else  if(syncMode==='conflict'||remoteRefreshAvailable){label='Конфликт изменений';cls='sync-error'}
  else if(syncMode==='offline'||syncMode==='unavailable'||(typeof navigator!=='undefined'&&!navigator.onLine)){
   label='Офлайн · '+(syncDirty?'Ожидает отправки':'Сервер недоступен');cls='sync-error';
  }else if(syncBusy||syncDirty){label='Синхронизация…';cls='sync-pending'}
@@ -193,6 +194,8 @@ function scheduleSync(){
  syncRetryTimer=setTimeout(()=>{syncRetryTimer=null;flushLiveSync()},250);
 }
 function flushLiveSync(){
+ // Never send local device-only test shifts to production.
+ if(String(syncShiftId||'').startsWith('local-test-'))return;
  if(syncBusy||syncMode==='conflict'||!syncShiftId||!syncDirty)return;
  if(syncMode!=='shared'&&syncMode!=='offline')return;
  syncBusy=true;const generation=syncDirty,body=syncClone(data),baseRevision=syncRevision,baseState=syncBaseState?syncClone(syncBaseState):null;
