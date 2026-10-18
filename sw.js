@@ -1,4 +1,4 @@
-const CACHE='cocktail-room-shell-v18';
+const CACHE='cocktail-room-shell-v19';
 const PREFIX='cocktail-room-shell-';
 const ASSETS=['./','./index.html','./styles.css','./app.js','./db.js','./shifts-ui.js','./manifest.webmanifest','./icon.svg','./work.html','./pwa-work-client.js','./secure-work-store.js'];
 const FILES=new Set(['','index.html','styles.css','app.js','db.js','shifts-ui.js','manifest.webmanifest','icon.svg','work.html','pwa-work-client.js','secure-work-store.js']);
@@ -25,7 +25,7 @@ self.addEventListener('fetch',event=>{
    return response;
   }catch(error){
    const cached=await cache.match(req,{ignoreSearch:true})||
-    (req.mode==='navigate'?await cache.match('./index.html'):null);
+    (req.mode==='navigate'?(await cache.match(path==='work.html'?'./work.html':'./index.html')):null);
    if(cached)return cached;
    throw error;
   }
