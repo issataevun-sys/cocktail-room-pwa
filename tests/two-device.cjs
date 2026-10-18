@@ -126,6 +126,29 @@ async function run(){
  a.n.onLine=true;
  await a.app.flush();
  assert.equal(server.payload.state.shifts[0].status,'closed');
+
+ // Test explicit cleanup (never auto-infer TEST names), recovery copy, and
+ // preservation of unrelated catalog and blocked conflicting Windows data.
+ const firstRevision=server.revision;
+ const cleanup=await a.app.cleanupSelected({
+  shiftIds:['shift-1'],orderIds:[],bookingIds:[],guestIds:['guest-A']
+ });
+ assert.equal(cleanup.removed.shifts,1);
+ assert.equal(cleanup.removed.hookahs,4);
+ assert.equal(cleanup.removed.guests,1);
+ const backup=a.records.get('pilot-precleanup');
+ assert.ok(backup,'Pre-cleanup encrypted-store recovery record missing');
+ assert.equal(backup.payload.state.hookahs.length,4,'Recovery copy must retain deleted records');
+ assert.equal(server.revision,firstRevision,'Cleanup should write locally BEFORE sending');
+ assert.equal(a.saved().dirty,true,'Cleanup outbox must remain dirty until acknowledged');
+ await a.app.flush();
+ assert.equal(server.payload.state.hookahs.length,0);
+ assert.equal(server.payload.state.shifts.length,0);
+ assert.equal(server.payload.guests.length,0);
+ assert.equal(server.payload.lists.flavors.length,1,'Independent catalog must survive cleanup');
+ assert.equal(a.records.get('pilot-precleanup').payload.state.hookahs.length,4);
+ assert.equal(b.saved().payload.state.hookahs.length,4,'Conflicted device must not silently rewrite its data');
+ console.log('PASS: explicit cleanup preserved encrypted backup, removed selected closed shift and its orders, retained catalog.');
  console.log('PASS: two-device online, independent merge, offline/reconnect, guest+catalog merge, same-record conflict, offline close.');
  console.log('Server revision='+server.revision+', confirmed writes='+server.saves.length);
 }
