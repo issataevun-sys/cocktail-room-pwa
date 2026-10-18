@@ -80,14 +80,20 @@ input::placeholder,textarea::placeholder{color:#949ea6;opacity:1;font-weight:400
 .pill.sync-online{background:#edf8f1;color:#16633d;border-color:#bcdfc8}.pill.sync-pending{background:#fff8e8;color:#805512;border-color:#f0dda8}.pill.sync-error{background:#fff0ef;color:#a43832;border-color:#eebeba}.sync-warning{color:#9c3732;margin-right:9px}
 .birthday-fields{display:grid;grid-template-columns:minmax(75px,1fr) minmax(130px,2fr);gap:8px}.birthday-fields input,.birthday-fields select{min-width:0}
 .past-filter-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 180px;gap:10px;align-items:end;margin:16px 0}.past-check{display:flex;flex-direction:row;align-items:center;gap:7px;min-height:42px}.past-check input{width:18px;min-height:18px}.past-shift-rows{display:grid;gap:6px;margin-top:10px}.past-shift-row{display:block;text-align:left;padding:13px;width:100%;border:1px solid #e0e5e8;border-radius:10px;background:white}.past-shift-main,.past-shift-numbers{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}.past-shift-numbers{font-size:12px;color:#63717a;margin-top:6px}.past-flag,.past-alert{color:#925320;background:#fff7e9;border-radius:7px;padding:5px 8px;font-size:12px}.past-alert{padding:11px}.past-detail-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:16px 0}.past-metric{border:1px solid #e3e8eb;border-radius:9px;padding:10px;display:grid;gap:5px}.past-metric span,.past-metric small{color:#71808a;font-size:12px}.past-metric strong{font-size:19px}.past-shift-people{margin:14px 0}.past-orders{display:grid;gap:7px}.past-order{border:1px solid #e3e8eb;border-radius:9px;padding:12px}.past-order summary{display:flex;flex-wrap:wrap;align-items:center;gap:8px 15px;cursor:pointer}.past-order summary strong{min-width:135px}.past-order-content{border-top:1px solid #eef1f2;margin-top:10px;padding-top:8px;font-size:13px}.past-wash{padding:12px;border:1px solid #e3e8eb;border-radius:9px;margin-bottom:7px}@media(max-width:800px){.past-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:520px){.past-filter-grid{grid-template-columns:1fr}.past-detail-metrics{grid-template-columns:1fr}}
+/* Owner PWA: narrow screen inputs must not overflow their cards. */
+#pilot-open,#pilot-open label,#pilot-open .clearable-field{width:100%;max-width:100%;min-width:0;box-sizing:border-box}
+#pilot-open input[type="date"]{display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box;text-align:center;font-size:14px;font-weight:400;letter-spacing:0}
+#pilot-open input[name="waiter"]{font-weight:400}
+#pilot-open .clearable-field{display:block}
+#pilot-open button.primary{margin-top:12px}
 </style><meta name="theme-color" content="#171d22"><link rel="icon" href="./icon.svg" type="image/svg+xml">
 </head>
 <body>
-<div class="shell"><aside class="side"><div class="logo">COCKTAIL ROOM<small>PWA v1.0 beta · офлайн</small></div>
+<div class="shell"><aside class="side"><div class="logo">COCKTAIL ROOM<small>PWA · онлайн и офлайн</small></div>
 <nav><button class="active" data-tab="home">Обзор</button><button data-tab="shifts">Текущая смена</button><button data-tab="past">Прошлые смены</button><button data-tab="guests">Гости</button><button data-tab="lists">Списки</button><button data-tab="system">Система</button></nav>
-<div class="sidefoot">Только владелец · переход на общую базу<br>Офлайн-PWA ещё не готова</div></aside>
+<div class="sidefoot">Режим владельца · зашифрованная локальная копия<br>Синхронизация при наличии интернета</div></aside>
 <main><header><div><div class="sub">COCKTAIL ROOM / OWNER</div><h1 id="title">Обзор</h1></div><div class="header-meta"><time id="header-clock">--:--</time><span class="pill" id="server">Проверка…</span></div></header>
-<div class="notice">РАБОЧИЙ РЕЖИМ PWA: для действий со сменой необходимо активное защищённое Google-подключение. Если окно авторизации закрыто, редактирование блокируется. Офлайн-копия доступна после включения шифрования, только для просмотра.</div>
+<div class="notice" id="work-mode-notice">PWA: открой защищённую смену владельца. Изменения сначала сохраняются на устройстве, затем отправляются в Google при появлении связи. Если синхронизация не подтверждена, изменения остаются в локальной очереди. Этот режим пока не отправляет данные в рабочие заказы iiko.</div>
 <div id="content"></div></main></div><div id="modal-host"></div><div id="message" role="status"></div>
 <script src="./secure-work-store.js"></script>
 <script src="./pwa-work-client.js"></script>
