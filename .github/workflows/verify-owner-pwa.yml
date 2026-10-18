@@ -1,0 +1,28 @@
+name: Verify COCKTAIL ROOM owner PWA
+on:
+  push:
+    branches:
+      - main
+      - feature/shift-history-workflow-20261018
+    paths:
+      - work.html
+      - pwa-owner-sync.js
+      - pwa-relay-transport.js
+      - secure-work-store.js
+      - pwa-work-client.js
+      - sw.js
+      - tests/**
+      - .github/workflows/verify-owner-pwa.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate JavaScript and offline shift workflow
+        run: node tests/smoke.cjs
