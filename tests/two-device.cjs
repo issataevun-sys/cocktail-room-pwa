@@ -10,8 +10,8 @@ const source=fs.readFileSync('pwa-owner-sync.js','utf8');
 const copy=x=>x===undefined?undefined:JSON.parse(JSON.stringify(x));
 let seed=0;
 const server={revision:0,payload:null,receipts:new Map(),saves:[]};
-function connect(name){
- const records=new Map(),inputs=new Map(),n={onLine:true};
+function connect(name,records=new Map()){
+ const inputs=new Map(),n={onLine:true};
  const el=id=>{if(!inputs.has(id))inputs.set(id,{value:name,textContent:'',style:{}});return inputs.get(id)};
  const doc={readyState:'complete',querySelector:()=>({append(){}}),
   createElement:()=>({style:{}}),getElementById:el,addEventListener(){}};
@@ -56,6 +56,7 @@ function connect(name){
  });
  return {name,app:win.CRPilot,records,n,el,
   open:async()=>{await el('pilot-connect').onclick();assert.equal(win.CRPilot.isActive(),true)},
+  resume:async()=>{await el('pilot-resume').onclick();assert.equal(win.CRPilot.isActive(),true)},
   local:()=>copy(state),saved:()=>copy(records.get('pilot-work')),
   edit:async fn=>{fn(state);await win.CRPilot.onChange()},status:()=>status};
 }
@@ -109,6 +110,14 @@ async function run(){
  assert.equal(b.saved().payload.state.hookahs.find(h=>h.id==='hookah-A').price,3000);
  assert.equal(b.saved().conflicts.length,1);
  assert.match(b.saved().conflicts[0].path,/state\.hookahs\[hookah-A\]/);
+ // The conflict must remain BLOCKED after Windows is closed and reopened.
+ const reopened=connect('WindowsReopen',b.records);
+ await reopened.resume();
+ assert.equal(reopened.saved().conflicts.length,1);
+ const revisionLocked=server.revision;
+ await reopened.app.flush();
+ assert.equal(server.revision,revisionLocked);
+ assert.equal(reopened.local().state.hookahs.find(h=>h.id==='hookah-A').price,3000);
  // Unrelated, offline closing still works on the clean iPhone.
  a.n.onLine=false;
  await a.app.closeShift();
