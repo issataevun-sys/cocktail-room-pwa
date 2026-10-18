@@ -1126,12 +1126,49 @@ function showPastShift(date){
   target.innerHTML=html;
  }).withFailureHandler(err=>{if(target.isConnected)target.innerHTML='<p class="past-alert">Ошибка загрузки: '+esc(err.message||err)+'</p>'}).crPastShiftDetail(date);
 }
+/** Encrypted owner history. Does not touch the separate legacy import data. */
+function pilotPastRender(){
+ const root=$('content');
+ const all=(data.shifts||[]).slice().sort((a,b)=>String(b.day||'').localeCompare(String(a.day||'')));
+ root.innerHTML='<div class="box"><div class="sectionhead"><h2>История смен PWA</h2><span class="tag">Зашифровано</span></div>'+
+ '<p class="muted">Данные текущих смен хранятся локально и синхронизируются с отдельным зашифрованным снимком. Старый архив Google пока не подключён.</p>'+
+ '<div class="list" id="pilot-history-list">'+
+ (all.map(shift=>{
+  const orders=data.hookahs.filter(o=>o.shiftId===shift.id);
+  const sum=orders.reduce((n,o)=>n+(Number(o.price)||0),0);
+  const hours=data.vipHours.filter(h=>h.shiftId===shift.id&&!h.free);
+  const vip=hours.length*1000;
+  return '<button type="button" class="past-shift-row" data-pilot-history="'+esc(shift.id)+'">'+
+   '<div class="past-shift-main"><strong>'+esc(displayDate(shift.day))+'</strong>'+
+   '<span>'+esc(shift.status==='closed'?'Закрыта':'Открыта')+'</span></div>'+
+   '<div class="past-shift-numbers"><span>Кальяны: '+orders.length+'</span>'+
+   '<span>Сумма кальянов: '+(sum).toLocaleString('ru-RU')+' ₸</span>'+
+   '<span>VIP: '+vip.toLocaleString('ru-RU')+' ₸</span></div></button>';
+ }).join('')||'<p class="muted">Смен пока нет</p>')+'</div></div>';
+ root.querySelectorAll('[data-pilot-history]').forEach(btn=>btn.onclick=()=>{
+  const shift=data.shifts.find(v=>v.id===btn.dataset.pilotHistory);
+  if(!shift)return;
+  const orders=data.hookahs.filter(o=>o.shiftId===shift.id);
+  const items=orders.slice().sort((a,b)=>Number(a.table)-Number(b.table));
+  const sum=orders.reduce((n,o)=>n+(Number(o.price)||0),0);
+  const vipHours=data.vipHours.filter(h=>h.shiftId===shift.id&&!h.free);
+  modal('<div class="modal-head"><h2>Смена '+esc(displayDate(shift.day))+'</h2><button class="modal-close" data-close-modal>×</button></div>'+
+   '<p class="muted">Статус: '+esc(shift.status==='closed'?'Закрыта':'Открыта')+
+   ' · Официант: '+esc(shift.waiter||'—')+' · Кальянщики: '+esc((shift.employees||[]).filter(Boolean).join(', ')||'—')+'</p>'+
+   '<div class="metrics">'+metric('Кальяны',orders.length)+metric('Кальяны, ₸',sum.toLocaleString('ru-RU'))+
+   metric('VIP, ₸',(vipHours.length*1000).toLocaleString('ru-RU'))+'</div>'+
+   '<div class="list">'+(items.map(o=>'<div class="item"><div><strong>Стол '+esc(o.table)+' · '+esc(o.guest||'Без имени')+
+   '</strong><div class="muted">'+esc(o.status==='done'?'Закрыт':'Активен')+
+   ' · '+Number(o.price||0).toLocaleString('ru-RU')+' ₸</div></div></div>').join('')||
+   '<p class="muted">Кальянов нет</p>')+'</div>',true);
+ });
+}
 function paint(){
 document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
 $('title').textContent=({home:'Обзор',shifts:'Текущая смена',past:'Прошлые смены',guests:'Гости',lists:'Списки',system:'Система'})[tab];
 const root=$('content'),active=openShift();
  document.body.classList.toggle('pilot-active',syncMode==='pilot');
-if(tab==='past'){pastRender();return}
+if(tab==='past'){if(syncMode==='pilot')pilotPastRender();else pastRender();return}
 if(tab==='home'){
  root.innerHTML='<div class="metrics">'+metric('Смены',data.shifts.length)+metric('Кальяны',data.hookahs.length)+metric('Гости в базе',REMOTE_GUESTS.length)+'</div>'+
  '<div class="box"><h2>'+(syncMode==='pilot'?'Смена владельца':'Текущая общая смена')+'</h2>'+(active?'<p><strong>'+esc(displayDate(active.day))+'</strong> · '+active.employees.map(esc).join(', ')+'</p><p class="muted">Официант: '+esc(active.waiter||'—')+'</p>':'<p class="muted">Смена не открыта</p>')+
@@ -1275,10 +1312,9 @@ if(tab==='system'){
     '<button id="pilot-go">Открыть зал</button><button id="pilot-flush">Проверить синхронизацию</button>';
    $('pilot-go').onclick=()=>{tab='shifts';paint()};
    $('pilot-flush').onclick=()=>window.CRPilot?.refresh();
-  }else if(data.shifts?.length){
-   area.innerHTML='<p>Последняя смена закрыта. Архивация и открытие следующей смены будут доступны после подключения истории.</p>';
   }else{
-   area.innerHTML='<form id="pilot-open"><label>Дата<input name="day" type="date" value="'+localDay()+'" required></label>'+
+   area.innerHTML='<p class="muted">Закрытых смен: '+data.shifts.filter(s=>s.status==='closed').length+'. История доступна во вкладке «Прошлые смены».</p>'+
+    '<form id="pilot-open"><label>Дата<input name="day" type="date" value="'+localDay()+'" required></label>'+
     '<label>Официант<input name="waiter" maxlength="90" placeholder="Официант"></label><button class="primary" type="submit">Открыть смену</button></form>';
    $('pilot-open').onsubmit=e=>{
     e.preventDefault();const fd=new FormData(e.currentTarget);
@@ -1355,7 +1391,7 @@ function health(){
  }).crWebTestHealth();
 }
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
- if(window.CRPilot?.isActive()&&!['home','shifts','system'].includes(b.dataset.tab)){
+ if(window.CRPilot?.isActive()&&!['home','shifts','system','past'].includes(b.dataset.tab)){
   toast('Этот раздел пока не подключён к синхронизации.');return;
  }
  tab=b.dataset.tab;paint()
@@ -1452,16 +1488,24 @@ window.CRPilot?.bind({
   renderSyncStatus();
  },
  createShift:({day,waiter})=>{
-  if(data.shifts?.length)throw Error('Для новой смены необходима архивация предыдущей');
-  if(!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(day))throw Error('Некорректная дата смены');
+  if(openShift())throw Error('Сначала закрой предыдущую смену');
+  if(!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(day)||!Number.isFinite(Date.parse(day+'T12:00:00')))
+   throw Error('Некорректная дата смены');
+  if(data.shifts.some(s=>s.day===day))throw Error('Смена за эту дату уже существует');
+  if(!Array.isArray(data.shifts))data.shifts=[];
   const id='pilot-'+crypto.randomUUID();
-  data={shifts:[{id,day,status:'open',employees:[''],waiter}],hookahs:[],guests:[],tables:[],bookings:[],washings:[],vipHours:[]};
-  syncShiftId=id;syncMode='pilot';save();tab='shifts';paint();
+  data.shifts.push({id,day,status:'open',employees:[''],waiter,openedAt:new Date().toISOString()});
+  // syncShiftId identifies the encrypted workspace, NOT the daily shift.
+  // Keep it stable so the signed server revision and all closed days survive.
+  if(!syncShiftId)syncShiftId=id;
+  syncMode='pilot';save();tab='shifts';paint();
  },
  closeShift:()=>{
-  if(syncDirty)throw Error('Перед закрытием дождись синхронизации');
   const opened=openShift();if(!opened)return;
-  opened.status='closed';opened.closedAt=new Date().toISOString();save();paint();
+  opened.status='closed';opened.closedAt=new Date().toISOString();
+  // Closing a shift is allowed offline. The queued encrypted state will be
+  // delivered when the network returns; nothing is cleared from the device.
+  save();tab='system';paint();
  }
 });
 window.CRPWA.setSnapshotProvider(()=>({
