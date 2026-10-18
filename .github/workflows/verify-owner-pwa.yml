@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - feature/trusted-owner-device-20261019
       - feature/owner-test-record-cleanup-20261019
       - maintenance/single-management-release-20261019
     paths:
@@ -35,3 +36,4 @@ jobs:
           node tests/owner-sync.cjs
           node tests/two-device.cjs
           node tests/production-layout.cjs
+          node tests/trusted-device.cjs
