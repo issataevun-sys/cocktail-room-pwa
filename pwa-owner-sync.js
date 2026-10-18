@@ -57,7 +57,16 @@
   if(!Number.isInteger(acked)||acked<local.revision)return false;
   const fullyAcked=Number.isInteger(local.pendingGeneration)&&
     local.pendingGeneration===local.generation;
-  const oldSent=local.pendingState||(fullyAcked?clone(local.payload):null);
+  let oldSent=local.pendingState||(fullyAcked?clone(local.payload):null);
+  if(!oldSent){
+   // Previous app versions did not persist pendingState. The exact
+   // acknowledged snapshot can still be recovered if the server has not
+   // moved past the receipt's revision.
+   try{
+    const verified=await transport.load();
+    if(verified.revision===acked&&verified.state)oldSent=clone(verified.state);
+   }catch(e){}
+  }
   if(!oldSent){
    blocked=true;
    updateStatus('Не удалось восстановить исходный снимок отправки. Нужна ручная сверка.');
