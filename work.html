@@ -539,13 +539,13 @@ function showGuestCard(id){
  modal('<div class="modal-head"><h2>Карточка гостя</h2><button class="modal-close" data-close-modal>×</button></div>'+
  '<div class="guest-detail">'+guestCardHtml(g)+'</div><div id="historical-guest-card"></div>'+
  '<div class="actions"><button type="button" data-close-modal>Закрыть</button><button type="button" class="primary" id="guest-edit">Редактировать</button></div>',true);
- loadHistoricalGuestCard(g.id,$('historical-guest-card'));
+ if(syncMode==='pilot')$('historical-guest-card').innerHTML='<h3>История гостя</h3>'+guestHistory(g.name,g.id);
+ else loadHistoricalGuestCard(g.id,$('historical-guest-card'));
  $('guest-edit').onclick=()=>showGuestEditor(g.id);
 }
 function setupGuestPhoneInput(input){
  // Stable +7 prefix. Never auto-insert missing phone digits.
- const onFocus=()=>{if(!input.value)input.value='+7 '};
- input.addEventListener('focus',onFocus);
+ // The guest decides whether to type a +7 prefix; never insert it automatically.
  input.addEventListener('input',()=>{
   const text=input.value, digits=text.replace(/\D/g,'');
   if(!text||text==='+')return;
@@ -554,7 +554,6 @@ function setupGuestPhoneInput(input){
    input.value=formatKzPhone(text)||'+7 ';
   }
  });
- if(!input.value)input.value='+7 ';
 }
 function showGuestEditor(id){
  const g=id?REMOTE_GUESTS.find(x=>x.id===id):null;if(id&&!g)return toast('Гость не найден');
@@ -590,6 +589,23 @@ function showGuestEditor(id){
   }
   const entry={id:g?.id||'',name:String(dataForm.get('name')||'').trim(),phone,category:dataForm.get('category'),birthday,source:dataForm.get('source'),comment:dataForm.get('comment')};
   const btn=$('guest-edit-save');btn.disabled=true;btn.textContent='Сохранение…';
+  if(syncMode==='pilot'){
+   if(!entry.name){btn.disabled=false;return toast('Введи имя гостя');}
+   const normalized=entry.name.toLocaleLowerCase('ru');
+   const dup=REMOTE_GUESTS.find(x=>x.id!==entry.id&&
+    (String(x.name||'').trim().toLocaleLowerCase('ru')===normalized||
+    (entry.phone&&String(x.phone||'').replace(/\\D/g,'')===entry.phone.replace(/\\D/g,''))));
+   if(dup){
+    btn.disabled=false;btn.textContent='Сохранить';
+    return toast('Имя или телефон уже есть у другого гостя');
+   }
+   const record={...g,...entry,id:g?.id||crypto.randomUUID(),createdAt:g?.createdAt||new Date().toISOString()};
+   const index=REMOTE_GUESTS.findIndex(x=>x.id===record.id);
+   if(index>=0)REMOTE_GUESTS[index]=record;else REMOTE_GUESTS.push(record);
+   save();toast('Гость сохранён локально и ожидает синхронизации');
+   if(tab==='guests')paint();showGuestCard(record.id);
+   return;
+  }
   google.script.run.withSuccessHandler(res=>{
    btn.disabled=false;btn.textContent='Сохранить';
    if(res.duplicate)return appConfirm('Совпадение по '+(res.reason==='phone'?'телефону':'имени')+'. Открыть существующего гостя?',()=>showGuestCard(res.guest.id));
@@ -609,6 +625,7 @@ function resolveGuest(name){
  return found?found.id:null;
 }
 function loadRemoteGuests(){
+ if(syncMode==='pilot')return;
  google.script.run.withSuccessHandler(rows=>{REMOTE_GUESTS=Array.isArray(rows)?rows:[];remoteGuestsLoaded=true;if(tab==='guests')paint()}).withFailureHandler(err=>toast('Ошибка загрузки базы гостей: '+(err.message||err))).crGetGuests();
 }
 function guestHistory(name,id){
@@ -1271,11 +1288,11 @@ if(tab==='lists'){
 }
 if(tab==='guests'){
  const ordered=REMOTE_GUESTS.slice();
- root.innerHTML='<div class="box"><div class="sectionhead"><h2>База гостей · '+REMOTE_GUESTS.length+'</h2><button class="primary" id="guest-add-new">+ Новый гость</button></div>'+
+ root.innerHTML='<div class="box"><div class="sectionhead"><h2>'+(syncMode==='pilot'?'Гости PWA · ':'База гостей · ')+REMOTE_GUESTS.length+'</h2><button class="primary" id="guest-add-new">+ Новый гость</button></div>'+
  '<div class="formgrid"><label>Поиск по имени или телефону<input id="guests-search" placeholder="Имя или телефон" autocomplete="off"></label>'+
  '<label>Сортировка<select id="guests-sort"><option value="newest">По дате добавления · новые сверху</option><option value="oldest">По дате добавления · старые сверху</option><option value="az">По алфавиту · А–Я</option><option value="za">По алфавиту · Я–А</option></select></label></div>'+
  '<div id="guests-search-results" class="guest-directory"></div></div>'+
- '<div class="box"><details id="test-guests-section"><summary>Тестовые гости этого браузера · '+data.guests.length+'</summary><p class="muted">Эти имена не входят в реальную базу Google Sheets. Удаление убирает только тестового гостя, а не его прежние записи в истории кальянов.</p><div id="test-guests-list"></div></details></div>';
+ (syncMode==='pilot'?'<div class="box"><p class="muted">Карточки хранятся зашифрованно и синхронизируются между зарегистрированными устройствами владельца. Импорт старой базы гостей пока не выполнен.</p></div>':'<div class="box"><details id="test-guests-section"><summary>Тестовые гости этого браузера · '+data.guests.length+'</summary><p class="muted">Эти имена не входят в реальную базу Google Sheets. Удаление убирает только тестового гостя, а не его прежние записи в истории кальянов.</p><div id="test-guests-list"></div></details></div>');
  const search=$('guests-search'),sort=$('guests-sort'),result=$('guests-search-results');
  function renderGuestSearch(){
   const query=search.value.trim().toLocaleLowerCase('ru'),digits=query.replace(/\D/g,'');
@@ -1293,6 +1310,7 @@ if(tab==='guests'){
  search.addEventListener('input',renderGuestSearch);sort.addEventListener('change',renderGuestSearch);renderGuestSearch();
  $('guest-add-new').onclick=()=>showGuestEditor(null);
  const testList=$('test-guests-list');
+ if(!testList)return;
  testList.innerHTML=data.guests.length?data.guests.slice().sort((a,b)=>a.name.localeCompare(b.name,'ru')).map(g=>'<div class="catalog-edit-row"><strong>'+esc(g.name)+'</strong><button type="button" class="smallaction danger" data-delete-test-guest="'+esc(g.id)+'">Удалить</button></div>').join(''):'<div class="muted">Тестовых гостей нет</div>';
  testList.querySelectorAll('[data-delete-test-guest]').forEach(b=>b.onclick=()=>{
   const g=data.guests.find(x=>x.id===b.dataset.deleteTestGuest);if(!g)return;
@@ -1391,7 +1409,7 @@ function health(){
  }).crWebTestHealth();
 }
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
- if(window.CRPilot?.isActive()&&!['home','shifts','system','past'].includes(b.dataset.tab)){
+ if(window.CRPilot?.isActive()&&!['home','shifts','system','past','guests'].includes(b.dataset.tab)){
   toast('Этот раздел пока не подключён к синхронизации.');return;
  }
  tab=b.dataset.tab;paint()
