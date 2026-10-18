@@ -240,13 +240,18 @@
   }else if(!saved)throw Error('Для первого подключения нужен интернет');
   if(saved){
    local=saved;
+   // A previously detected same-record conflict survives app restarts.
+   if(Array.isArray(local.conflicts)&&local.conflicts.length){
+    blocked=true;
+    lastError='Есть нерешённый конфликт: '+local.conflicts.map(c=>c.path).join(', ').slice(0,180);
+   }
    ensureBase();
-   if(remote&&local.pending&&remote.revision>local.revision){
+   if(!blocked&&remote&&local.pending&&remote.revision>local.revision){
     let receipt=null;
     try{receipt=await transport.receipt(local.pending.operation)}catch(e){}
     if(receipt?.confirmed)await confirmPending(receipt);
    }
-   if(remote&&remote.revision>local.revision){
+   if(!blocked&&remote&&remote.revision>local.revision){
     await reconcile(remote);
    }
   }else{
