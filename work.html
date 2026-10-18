@@ -152,6 +152,7 @@ function renderSyncStatus(){
  else el.textContent=label;
 }
 function checkSharedHeartbeat(){
+ if(syncMode==='pilot')return;
  if(serverChecking||syncBusy||syncMode==='loading')return;
  if(typeof navigator!=='undefined'&&!navigator.onLine){
   if(syncMode==='shared')syncMode='offline';
@@ -1469,6 +1470,7 @@ window.CRPWA.setRestoreSnapshot(snapshot=>{
  paint();renderSyncStatus();return true;
 });
 window.CRPWA.setOnConnected(()=>{
+ if(window.CRPilot?.isActive())return;
  // Locally generated test shifts must never be sent to production Sheets.
  if(String(syncShiftId||'').startsWith('local-test-')){
   syncMode='offline';syncError='Тестовая смена хранится только на устройстве и не отправляется на сервер';
