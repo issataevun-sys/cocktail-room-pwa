@@ -1,7 +1,7 @@
 {
-  "name": "COCKTAIL ROOM",
-  "short_name": "Cocktail Room",
-  "description": "Устанавливаемый интерфейс COCKTAIL ROOM с зашифрованной локальной копией. Онлайн-синхронизация пока в разработке.",
+  "name": "COCKTAIL ROOM — MANAGEMENT",
+  "short_name": "COCKTAIL ROOM",
+  "description": "Управление сменами COCKTAIL ROOM с защищённым локальным хранилищем и автоматической синхронизацией двух устройств.",
   "start_url": "./work.html",
   "scope": "./",
   "id": "./",
