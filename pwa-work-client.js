@@ -4,7 +4,7 @@
  const KEY='cr-pwa-work-url';
  const overlay=document.createElement('div');
  overlay.id='cr-work-gate';
- overlay.style.cssText='position:fixed;inset:0;z-index:99999;display:grid;place-items:center;background:#0e1721c9;padding:16px;font-family:Arial,sans-serif';
+ overlay.style.cssText='position:fixed;inset:0;z-index:99999;display:grid;align-items:start;justify-items:center;overflow-y:auto;background:#0e1721c9;padding:16px;font-family:Arial,sans-serif';
  overlay.innerHTML='<div style="background:white;max-width:490px;width:100%;border-radius:15px;padding:22px;box-shadow:0 15px 55px #0004">'+
  '<h2 style="margin:0 0 12px">COCKTAIL ROOM · Рабочее приложение</h2>'+
  '<p style="line-height:1.5;color:#596975">Для работы нужна авторизованная Google-сессия. Открой защищённое окно и оставь его открытым. При потере связи редактирование блокируется.</p>'+
