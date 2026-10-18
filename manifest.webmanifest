@@ -1,8 +1,8 @@
 {
-  "name": "COCKTAIL ROOM — офлайн-прототип",
+  "name": "COCKTAIL ROOM",
   "short_name": "Cocktail Room",
-  "description": "Локальный тестовый PWA-прототип. Без подключения к рабочей базе.",
-  "start_url": "./",
+  "description": "Устанавливаемый интерфейс COCKTAIL ROOM с зашифрованной локальной копией. Онлайн-синхронизация пока в разработке.",
+  "start_url": "./work.html",
   "scope": "./",
   "id": "./",
   "display": "standalone",
