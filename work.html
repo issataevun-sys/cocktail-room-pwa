@@ -423,7 +423,11 @@ const BRAND_LABELS={BB:'BB',CH:'CH',DEUS:'DEUS',DS:'DS',MH:'MH',OD:'OD',S:'S',TN
 function flavorOptions(){return '<datalist id="flavor-catalog">'+LIST_CATALOG.flavors.filter(x=>x.active).map(x=>'<option value="'+esc(x.brand+' '+x.name)+'"></option>').join('')+'</datalist>'}
 function listOptions(kind,id){return '<datalist id="'+id+'">'+(LIST_CATALOG[kind]||[]).filter(x=>x.active).map(x=>'<option value="'+esc(kind==='prices'?String(x.amount):x.name)+'"></option>').join('')+'</datalist>'}
 function loadFlavorCatalog(){
- if(syncMode==='pilot'){flavorCatalogLoaded=true;return;}
+ if(syncMode==='pilot'){
+  const cached=window.CRArchive?.getState()?.lists;
+  if(cached){LIST_CATALOG=cached;flavorCatalogLoaded=true;if(tab==='lists')paint()}
+  return;
+ }
  google.script.run.withSuccessHandler(rows=>{LIST_CATALOG=rows||LIST_CATALOG;flavorCatalogLoaded=true;if(tab==='lists')paint()}).withFailureHandler(e=>{flavorCatalogLoaded=false;toast('Не удалось загрузить списки: '+(e.message||e))}).crGetLists();
 }
 function catalogEditRow(kind,item){
@@ -1663,9 +1667,12 @@ window.CRPWA.setRestoreSnapshot(snapshot=>{
 });
 window.CRArchive?.subscribe(archive=>{
  ARCHIVE_GUESTS=Array.isArray(archive.guests)?archive.guests:[];
+ if(archive.lists&&Array.isArray(archive.lists.flavors)){
+  LIST_CATALOG=archive.lists;flavorCatalogLoaded=true;
+ }
  PAST_DATA=archive.index||null;PAST_LAST_ERROR=archive.error||'';
  mergeVisibleGuests();
- if(syncMode==='pilot'&&['guests','past','home'].includes(tab))paint();
+ if(syncMode==='pilot'&&['guests','past','home','lists','shifts'].includes(tab))paint();
 });
 window.CRPWA.setOnConnected(()=>{
  if(window.CRPilot?.isActive())return;
