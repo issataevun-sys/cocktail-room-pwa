@@ -503,8 +503,9 @@ function loadHistoricalGuestCard(guestId,node){
    '<p class="muted">Пока нет привязанных посещений. История появится после сопоставления гостя.</p>');
  };
  const onFailure=err=>{if(node.isConnected)node.textContent='История недоступна: '+String(err.message||err)};
- if(syncMode==='pilot')window.CRArchive.getGuestHistory(guestId).then(onSuccess).catch(onFailure);
- else google.script.run.withSuccessHandler(onSuccess).withFailureHandler(onFailure).crGetHistoricalGuestVisits(guestId);
+ if(window.CRPilot?.isActive()||typeof google==='undefined'){
+  window.CRArchive.getGuestHistory(guestId).then(onSuccess).catch(onFailure);
+ }else google.script.run.withSuccessHandler(onSuccess).withFailureHandler(onFailure).crGetHistoricalGuestVisits(guestId);
 }
 function showGuestOverlay(g){
  const backdrop=document.createElement('div');backdrop.className='guest-overlay';
@@ -580,8 +581,7 @@ function showGuestCard(id){
  modal('<div class="modal-head"><h2>Карточка гостя</h2><button class="modal-close" data-close-modal>×</button></div>'+
  '<div class="guest-detail">'+guestCardHtml(g)+'</div><div id="historical-guest-card"></div>'+
  '<div class="actions"><button type="button" data-close-modal>Закрыть</button><button type="button" class="primary" id="guest-edit">Редактировать</button></div>',true);
- if(syncMode==='pilot')$('historical-guest-card').innerHTML='<h3>История гостя</h3>'+guestHistory(g.name,g.id);
- else loadHistoricalGuestCard(g.id,$('historical-guest-card'));
+ loadHistoricalGuestCard(g.id,$('historical-guest-card'));
  $('guest-edit').onclick=()=>showGuestEditor(g.id);
 }
 function setupGuestPhoneInput(input){
