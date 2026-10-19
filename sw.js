@@ -18,16 +18,24 @@ self.addEventListener('fetch',event=>{
  if(!FILES.has(path))return; // Never cache protected data or server calls.
  event.respondWith((async()=>{
   const cache=await caches.open(CACHE);
-  try{
-   // Network first: deploy updates are picked up while online. Cache still works offline.
-   const response=await fetch(req,{cache:'no-store'});
+  const cached=await cache.match(req,{ignoreSearch:true})||
+   (req.mode==='navigate'?await cache.match('./work.html'):null);
+  // Use fresh code on a healthy connection, but do not stall the whole
+  // offline-first app on a slow network that never finishes a request.
+  const network=fetch(req,{cache:'no-store'}).then(async response=>{
    if(response.ok&&response.type==='basic')await cache.put(req,response.clone());
    return response;
-  }catch(error){
-   const cached=await cache.match(req,{ignoreSearch:true})||
-    (req.mode==='navigate'?(await cache.match('./work.html')):null);
-   if(cached)return cached;
-   throw error;
-  }
+  });
+  if(!cached)return network;
+  // The update may still finish and refresh the cache after we show the
+  // existing shell. Keep that revalidation alive in the service worker.
+  event.waitUntil(network.catch(()=>{}));
+  let timer;
+  try{
+   return await Promise.race([
+    network.catch(()=>cached),
+    new Promise(resolve=>{timer=setTimeout(()=>resolve(cached),2500);})
+   ]);
+  }finally{clearTimeout(timer);}
  })());
 });
