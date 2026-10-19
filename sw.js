@@ -1,7 +1,7 @@
-const CACHE='cocktail-room-shell-v27';
+const CACHE='cocktail-room-shell-v28';
 const PREFIX='cocktail-room-shell-';
-const ASSETS=['./','./index.html','./manifest.webmanifest','./icon.svg','./work.html','./pwa-work-client.js','./secure-work-store.js','./pwa-relay-transport.js','./pwa-workspace-merge.js','./pwa-owner-sync.js'];
-const FILES=new Set(['','index.html','manifest.webmanifest','icon.svg','work.html','pwa-work-client.js','secure-work-store.js','pwa-relay-transport.js','pwa-workspace-merge.js','pwa-owner-sync.js']);
+const ASSETS=['./','./index.html','./manifest.webmanifest','./icon.svg','./work.html','./pwa-work-client.js','./secure-work-store.js','./pwa-relay-transport.js','./pwa-workspace-merge.js','./pwa-archive.js','./pwa-owner-sync.js'];
+const FILES=new Set(['','index.html','manifest.webmanifest','icon.svg','work.html','pwa-work-client.js','secure-work-store.js','pwa-relay-transport.js','pwa-workspace-merge.js','pwa-archive.js','pwa-owner-sync.js']);
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });
