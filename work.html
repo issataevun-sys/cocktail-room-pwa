@@ -1349,12 +1349,7 @@ if(tab==='home'){
 }
 if(tab==='shifts'){
  const main=$('content');
- main.innerHTML='<div class="box sync-top"><div class="sectionhead"><h2>'+(syncMode==='pilot'?'Смена владельца':'Общая смена')+'</h2><span class="tag">'+(syncMode==='pilot'?'PWA · зашифровано':'Google Sheets')+'</span></div><div id="live-sync-status"></div>'+
- '<div class="actions"><button type="button" id="live-shift-refresh">Обновить с сервера</button></div></div>';
- $('live-shift-refresh').onclick=()=>{
-  if(syncMode==='pilot'){window.CRPilot?.refresh();return;}
-  if(syncDirty)return toast('Есть несинхронизированные изменения. Сначала отправь их.');initLiveShift()
- };
+ main.innerHTML='';
  if(syncMode==='conflict'||syncMode==='loading'||syncMode==='unavailable'){
   main.innerHTML+='<div class="box"><h2>'+(syncMode==='loading'?'Загрузка общей смены…':syncMode==='conflict'?'Конфликт данных':'Нет связи с сервером')+'</h2><p class="muted">'+esc(syncError||'Подключаемся к Google Sheets')+'</p>'+
    (syncMode==='conflict'?'<p>Изменения остались на этом устройстве. Для продолжения требуется сверка, автоматического перезаписывания нет.</p>':'')+'</div>';
