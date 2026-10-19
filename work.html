@@ -474,7 +474,7 @@ function showListEditor(kind,id){
 function loadHistoricalGuestCard(guestId,node){
  if(!node)return;
  node.innerHTML='<h3>История посещений</h3><p class="muted">Загружаем…</p>';
- google.script.run.withSuccessHandler(res=>{
+ const onSuccess=res=>{
   if(!node.isConnected)return;
   if(!res||!res.ok){node.textContent='История пока недоступна';return}
   node.innerHTML='<h3>История посещений</h3>'+
@@ -488,7 +488,10 @@ function loadHistoricalGuestCard(guestId,node){
      '<div class="item"><div><strong>'+esc(displayDate(v.date))+' · стол '+esc(v.table||'—')+'</strong>'+
      '<div class="muted">'+esc(v.flavors.join(', ')||'Вкусы не указаны')+' · '+fmt(v.price)+' ₸ · '+esc(v.grams||'—')+' г</div></div></div>').join('')+'</div>':
    '<p class="muted">Пока нет привязанных посещений. История появится после сопоставления гостя.</p>');
- }).withFailureHandler(err=>{if(node.isConnected)node.textContent='История недоступна: '+String(err.message||err)}).crGetHistoricalGuestVisits(guestId);
+ };
+ const onFailure=err=>{if(node.isConnected)node.textContent='История недоступна: '+String(err.message||err)};
+ if(syncMode==='pilot')window.CRArchive.getGuestHistory(guestId).then(onSuccess).catch(onFailure);
+ else google.script.run.withSuccessHandler(onSuccess).withFailureHandler(onFailure).crGetHistoricalGuestVisits(guestId);
 }
 function showGuestOverlay(g){
  const backdrop=document.createElement('div');backdrop.className='guest-overlay';
@@ -1139,7 +1142,7 @@ function showPastShift(date){
  modal('<div class="modal-head"><h2>Прошлая смена · '+esc(displayDate(date))+'</h2><button data-close-modal>×</button></div>'+
  '<div id="past-shift-detail"><p class="muted">Загружаем данные смены…</p></div>',true);
  const target=$('past-shift-detail');
- google.script.run.withSuccessHandler(data=>{
+ const onSuccess=data=>{
   if(!target.isConnected)return;
   if(!data||!data.ok){target.textContent='Не удалось открыть смену';return}
   const source=data.shifts[0],calc=data.calculated;
@@ -1172,7 +1175,10 @@ function showPastShift(date){
    '<p class="muted">Данные мойки за этот день отсутствуют.</p>';
   html+='<p class="muted">История только для просмотра. Данные исходного архива не изменяются.</p>';
   target.innerHTML=html;
- }).withFailureHandler(err=>{if(target.isConnected)target.innerHTML='<p class="past-alert">Ошибка загрузки: '+esc(err.message||err)+'</p>'}).crPastShiftDetail(date);
+ };
+ const onFailure=err=>{if(target.isConnected)target.innerHTML='<p class="past-alert">Ошибка загрузки: '+esc(err.message||err)+'</p>'};
+ if(syncMode==='pilot')window.CRArchive.getPastDetail(date).then(onSuccess).catch(onFailure);
+ else google.script.run.withSuccessHandler(onSuccess).withFailureHandler(onFailure).crPastShiftDetail(date);
 }
 /** Encrypted owner history. Does not touch the separate legacy import data. */
 function pilotPastRender(){
