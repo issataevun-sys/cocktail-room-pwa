@@ -33,6 +33,7 @@
   try{
    await window.CRWorkStore.openDevice();
    storeReady=true;
+   await window.CRArchive?.restoreCached?.().catch(e=>console.warn('Encrypted archive cache unavailable',e));
    const pairing=await window.CRWorkStore.loadNamed('pilot-config');
    if(pairing&&window.CRPilot){
     try{await window.CRPilot.resume();return;}
