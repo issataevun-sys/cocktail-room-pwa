@@ -101,6 +101,7 @@ body.pilot-active .sync-top .tag{background:#f4f5f6}
 <script src="./pwa-work-client.js"></script>
 <script src="./pwa-relay-transport.js"></script>
 <script src="./pwa-workspace-merge.js"></script>
+<script src="./pwa-archive.js"></script>
 <script src="./pwa-owner-sync.js"></script>
 <script>
 'use strict';
@@ -112,7 +113,13 @@ let lastServerOK=0,serverChecking=false,remoteRefreshAvailable=false,syncBaseSta
 const $=id=>document.getElementById(id);
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let tab='shifts',data,chosenTable=30,editOrderId=null,editBookingId=null,modalReturn='table',editWorkers=false,showSecondWorker=false;
-let REMOTE_GUESTS=[],remoteGuestsLoaded=false;
+let REMOTE_GUESTS=[],PWA_GUESTS=[],ARCHIVE_GUESTS=[],remoteGuestsLoaded=false;
+function mergeVisibleGuests(){
+ const items=new Map();
+ ARCHIVE_GUESTS.filter(g=>g&&g.id).forEach(g=>items.set(g.id,g));
+ PWA_GUESTS.filter(g=>g&&g.id).forEach(g=>items.set(g.id,g));
+ REMOTE_GUESTS=[...items.values()];remoteGuestsLoaded=true;
+}
 let PAST_DATA=null,PAST_LOADING=false,PAST_LAST_ERROR='',PAST_FILTERS={month:'',worker:'',issues:false,search:''},PAST_VISIBLE=60;
 function load(){try{const x=JSON.parse(sessionStorage.getItem(storageKey)||'{}');data={shifts:Array.isArray(x.shifts)?x.shifts:[],hookahs:Array.isArray(x.hookahs)?x.hookahs:[],guests:Array.isArray(x.guests)?x.guests:[],tables:Array.isArray(x.tables)?x.tables:[],bookings:Array.isArray(x.bookings)?x.bookings:[],washings:Array.isArray(x.washings)?x.washings:[],vipHours:Array.isArray(x.vipHours)?x.vipHours:[]};}catch{data={shifts:[],hookahs:[],guests:[],tables:[],bookings:[],washings:[],vipHours:[]}}}
 function save(){
@@ -618,8 +625,9 @@ function showGuestEditor(id){
     return toast('Имя или телефон уже есть у другого гостя');
    }
    const record={...g,...entry,id:g?.id||crypto.randomUUID(),createdAt:g?.createdAt||new Date().toISOString()};
-   const index=REMOTE_GUESTS.findIndex(x=>x.id===record.id);
-   if(index>=0)REMOTE_GUESTS[index]=record;else REMOTE_GUESTS.push(record);
+   const index=PWA_GUESTS.findIndex(x=>x.id===record.id);
+   if(index>=0)PWA_GUESTS[index]=record;else PWA_GUESTS.push(record);
+   mergeVisibleGuests();
    save();toast('Гость сохранён локально и ожидает синхронизации');
    if(tab==='guests')paint();showGuestCard(record.id);
    return;
@@ -1062,6 +1070,7 @@ function pastMetricBlock(label,source,calculated,suffix=''){
  '<small>По кальянам: '+esc(value(calculated))+'</small></div>';
 }
 function pastLoadIndex(force=false){
+ if(syncMode==='pilot'){if(force)window.CRArchive?.refresh();return}
  if(PAST_LOADING)return;
  if(PAST_DATA&&!force){if(tab==='past')paint();return}
  PAST_LOADING=true;PAST_LAST_ERROR='';if(tab==='past')paint();
@@ -1073,8 +1082,8 @@ function pastLoadIndex(force=false){
   PAST_LOADING=false;PAST_LAST_ERROR=String(err.message||err);if(tab==='past')paint();
  }).crPastShiftIndex();
 }
-function pastRender(){
- const root=$('content');
+function pastRender(targetRoot){
+ const root=targetRoot||$('content');
  if(!PAST_DATA&&!PAST_LOADING&&!PAST_LAST_ERROR)pastLoadIndex();
  if(!PAST_DATA){
   root.innerHTML='<div class="box"><div class="sectionhead"><h2>История смен</h2><button id="past-retry">Обновить</button></div>'+
@@ -1170,7 +1179,7 @@ function pilotPastRender(){
  const root=$('content');
  const all=(data.shifts||[]).slice().sort((a,b)=>String(b.day||'').localeCompare(String(a.day||'')));
  root.innerHTML='<div class="box"><div class="sectionhead"><h2>История смен PWA</h2><span class="tag">Зашифровано</span></div>'+
- '<p class="muted">Данные текущих смен хранятся локально и синхронизируются с отдельным зашифрованным снимком. Старый архив Google пока не подключён.</p>'+
+ '<p class="muted">Новые смены синхронизируются между устройствами. Ниже доступен архив из COCKTAIL ROOM — DATABASE.</p>'+
  '<div class="list" id="pilot-history-list">'+
  (all.map(shift=>{
   const orders=data.hookahs.filter(o=>o.shiftId===shift.id);
@@ -1201,35 +1210,20 @@ function pilotPastRender(){
    ' · '+Number(o.price||0).toLocaleString('ru-RU')+' ₸</div></div></div>').join('')||
    '<p class="muted">Кальянов нет</p>')+'</div>',true);
  });
+ const archive=document.createElement('div');archive.id='archived-past-shifts';
+ root.appendChild(archive);
+ if(PAST_DATA)pastRender(archive);
+ else archive.innerHTML='<div class="box"><h2>Импортированные смены (с ноября 2025)</h2>'+
+  '<p class="muted">'+esc(window.CRArchive?.getState()?.error||'Получаем историю из основной базы…')+'</p>'+
+  '<button type="button" id="archive-retry">Обновить архив</button></div>';
+ if($('archive-retry'))$('archive-retry').onclick=()=>window.CRArchive?.refresh();
 }
 /** Trusted-device status is never assumed: each browser opts in separately. */
 async function paintOwnerTrustPanel(){
  const root=$('owner-trust-panel');
  if(!root||!window.CRPilot?.isActive())return;
- root.innerHTML='<h3 style="margin:0 0 7px">Вход на этом устройстве</h3>'+
-  '<p class="muted">Проверяем локальную защиту…</p>';
- try{
-  const enabled=await window.CRWorkStore.trustedDeviceEnabled();
-  const parent=$('owner-trust-panel');if(!parent)return;
-  parent.innerHTML='<h3 style="margin:0 0 7px">Вход на этом устройстве</h3>'+
-   (enabled?'<p>Доверенное устройство · автоматический вход включён.</p>'+
-     '<button type="button" class="danger" id="owner-trust-disable">Отключить автоматический вход</button>':
-    '<p class="muted">Включи один раз на своём iPhone или Windows. После этого MANAGEMENT будет открываться без повторного ввода фразы. Не включай на общем iPad сотрудников: любой, кто разблокировал устройство, сможет открыть OWNER.</p>'+
-     '<button type="button" class="primary" id="owner-trust-enable">Доверять этому устройству</button>')+
-   '<p id="owner-trust-message" class="muted"></p>';
-  if($('owner-trust-enable'))$('owner-trust-enable').onclick=()=>appConfirm(
-   'Запомнить защищённый ключ на этом устройстве? Любой, кто разблокирует устройство, сможет открыть MANAGEMENT без фразы шифрования.',async()=>{
-    const btn=$('owner-trust-enable');if(btn)btn.disabled=true;
-    try{await window.CRWorkStore.trustDevice();await paintOwnerTrustPanel()}
-    catch(e){const msg=$('owner-trust-message');if(msg)msg.textContent=String(e?.message||e);if(btn)btn.disabled=false}
-   });
-  if($('owner-trust-disable'))$('owner-trust-disable').onclick=()=>appConfirm(
-   'Отключить автоматический вход на этом устройстве? Следующий запуск снова запросит фразу шифрования.',async()=>{
-    const btn=$('owner-trust-disable');if(btn)btn.disabled=true;
-    try{await window.CRWorkStore.forgetTrustedDevice();await paintOwnerTrustPanel()}
-    catch(e){const msg=$('owner-trust-message');if(msg)msg.textContent=String(e?.message||e);if(btn)btn.disabled=false}
-   });
- }catch(e){const msg=$('owner-trust-panel');if(msg)msg.textContent='Не удалось проверить устройство: '+String(e?.message||e)}
+ root.innerHTML='<h3 style="margin:0 0 7px">Это устройство</h3>'+
+  '<p class="muted">Доступ подтверждён. Зашифрованная база открывается ключом устройства, без отдельного входа.</p>';
 }
 /** Owner-selected cleanup. No labels, names, or dates are used to guess what is a test. */
 function showPilotCleanup(){
@@ -1397,11 +1391,11 @@ if(tab==='lists'){
 }
 if(tab==='guests'){
  const ordered=REMOTE_GUESTS.slice();
- root.innerHTML='<div class="box"><div class="sectionhead"><h2>'+(syncMode==='pilot'?'Гости PWA · ':'База гостей · ')+REMOTE_GUESTS.length+'</h2><button class="primary" id="guest-add-new">+ Новый гость</button></div>'+
+ root.innerHTML='<div class="box"><div class="sectionhead"><h2>'+'База гостей · '+REMOTE_GUESTS.length+'</h2><button class="primary" id="guest-add-new">+ Новый гость</button></div>'+
  '<div class="formgrid"><label>Поиск по имени или телефону<input id="guests-search" placeholder="Имя или телефон" autocomplete="off"></label>'+
  '<label>Сортировка<select id="guests-sort"><option value="newest">По дате добавления · новые сверху</option><option value="oldest">По дате добавления · старые сверху</option><option value="az">По алфавиту · А–Я</option><option value="za">По алфавиту · Я–А</option></select></label></div>'+
  '<div id="guests-search-results" class="guest-directory"></div></div>'+
- (syncMode==='pilot'?'<div class="box"><p class="muted">Карточки хранятся зашифрованно и синхронизируются между зарегистрированными устройствами владельца. Импорт старой базы гостей пока не выполнен.</p></div>':'<div class="box"><details id="test-guests-section"><summary>Тестовые гости этого браузера · '+data.guests.length+'</summary><p class="muted">Эти имена не входят в реальную базу Google Sheets. Удаление убирает только тестового гостя, а не его прежние записи в истории кальянов.</p><div id="test-guests-list"></div></details></div>');
+ (syncMode==='pilot'?'<div class="box"><p class="muted">Гости из основной базы объединены с новыми карточками PWA. Новые изменения синхронизируются между устройствами; исторический источник не изменяется.</p></div>':'<div class="box"><details id="test-guests-section"><summary>Тестовые гости этого браузера · '+data.guests.length+'</summary><p class="muted">Эти имена не входят в реальную базу Google Sheets. Удаление убирает только тестового гостя, а не его прежние записи в истории кальянов.</p><div id="test-guests-list"></div></details></div>');
  const search=$('guests-search'),sort=$('guests-sort'),result=$('guests-search-results');
  function renderGuestSearch(){
   const query=search.value.trim().toLocaleLowerCase('ru'),digits=query.replace(/\D/g,'');
@@ -1605,11 +1599,12 @@ function setupClearControls(){
 function updateHeaderClock(){const el=$('header-clock');if(el)el.textContent=new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}updateHeaderClock();setInterval(updateHeaderClock,1000);
 load();demoData=JSON.parse(JSON.stringify(data));
 window.CRPilot?.bind({
- getSnapshot:()=>({state:syncClone(data),shiftId:syncShiftId,guests:REMOTE_GUESTS,lists:LIST_CATALOG}),
+ getSnapshot:()=>({state:syncClone(data),shiftId:syncShiftId,guests:PWA_GUESTS,lists:LIST_CATALOG}),
  applySnapshot:(snapshot,revision,dirty)=>{
   data=snapshot?.state||{shifts:[],hookahs:[],tables:[],bookings:[],washings:[],vipHours:[],guests:[]};
   syncShiftId=String(snapshot?.shiftId||'');syncRevision=Number(revision)||0;
-  REMOTE_GUESTS=Array.isArray(snapshot?.guests)?snapshot.guests:[];
+  PWA_GUESTS=Array.isArray(snapshot?.guests)?snapshot.guests:[];
+  mergeVisibleGuests();
   LIST_CATALOG=snapshot?.lists||{flavors:[],bowls:[],hookahs:[],cooling:[],prices:[]};
   remoteGuestsLoaded=true;flavorCatalogLoaded=true;
   syncMode='pilot';syncDirty=dirty?1:0;syncBusy=false;syncError='';
@@ -1650,10 +1645,17 @@ window.CRPWA.setRestoreSnapshot(snapshot=>{
  if(!snapshot||!snapshot.state||!snapshot.shiftId)return false;
  data=snapshot.state;syncShiftId=snapshot.shiftId;syncRevision=Number(snapshot.revision)||0;
  syncBaseState=snapshot.baseState||null;syncDirty=Number(snapshot.dirty)||0;
- REMOTE_GUESTS=Array.isArray(snapshot.guests)?snapshot.guests:[];
+ PWA_GUESTS=Array.isArray(snapshot.guests)?snapshot.guests:[];
+ mergeVisibleGuests();
  LIST_CATALOG=snapshot.lists||LIST_CATALOG;PAST_DATA=snapshot.past||null;remoteGuestsLoaded=true;flavorCatalogLoaded=true;
  syncMode='offline';lastServerOK=0;syncError='Зашифрованная локальная копия';
  paint();renderSyncStatus();return true;
+});
+window.CRArchive?.subscribe(archive=>{
+ ARCHIVE_GUESTS=Array.isArray(archive.guests)?archive.guests:[];
+ PAST_DATA=archive.index||null;PAST_LAST_ERROR=archive.error||'';
+ mergeVisibleGuests();
+ if(syncMode==='pilot'&&['guests','past','home'].includes(tab))paint();
 });
 window.CRPWA.setOnConnected(()=>{
  if(window.CRPilot?.isActive())return;
