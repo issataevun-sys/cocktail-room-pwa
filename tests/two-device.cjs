@@ -55,8 +55,8 @@ function connect(name,records=new Map()){
   }
  });
  return {name,app:win.CRPilot,records,n,el,
-  open:async()=>{await el('pilot-connect').onclick();assert.equal(win.CRPilot.isActive(),true)},
-  resume:async()=>{await el('pilot-resume').onclick();assert.equal(win.CRPilot.isActive(),true)},
+  open:async()=>{records.set('pilot-config',{url:'private-value',deviceId:name,deviceSecret:'private-value',roomEncryptionKey:'private-value'});await win.CRPilot.resume();assert.equal(win.CRPilot.isActive(),true)},
+  resume:async()=>{await win.CRPilot.resume();assert.equal(win.CRPilot.isActive(),true)},
   local:()=>copy(state),saved:()=>copy(records.get('pilot-work')),
   edit:async fn=>{fn(state);await win.CRPilot.onChange()},status:()=>status};
 }
