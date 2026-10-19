@@ -129,7 +129,17 @@
    }
    return {ok:false,pending:true,error:networkError||'Нет подтверждения сохранения'};
   }
-  return Object.freeze({ping,load,prepare,receipt,submit,deviceId});
+  async function archive(op,target=''){
+   if(!['catalog','history-index','history-detail','guest-history'].includes(op))
+    throw Error('Недопустимый запрос к архиву');
+   target=String(target||'');
+   const nonce=id(16),tag=await sig('archive|'+deviceId+'|'+nonce+'|'+op+'|'+target);
+   const res=await jsonp({op,device:deviceId,nonce,target,tag});
+   if(!res?.ok)throw Error(res?.error==='bad_operation'?
+    'Архив ещё не опубликован на сервере Apps Script': 'Архив недоступен: '+String(res?.error||'нет ответа'));
+   return res.data;
+  }
+  return Object.freeze({ping,load,prepare,receipt,submit,archive,deviceId});
  }
  window.CRRelayTransport={create};
 })();
