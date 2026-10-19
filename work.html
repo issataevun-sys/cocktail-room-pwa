@@ -141,6 +141,8 @@ function renderSyncStatus(){
  let label='Проверка сервера…',cls='sync-pending';
  if(syncMode==='pilot'){
   label=window.CRPilot?.label()||'Владелец · локальная смена';cls=(!navigator.onLine||syncError)?'sync-error':syncDirty?'sync-pending':'sync-online';
+ }else if(!window.CRPilot?.isActive()&&typeof google==='undefined'){
+  label=navigator.onLine?'Локально · база не подключена':'Офлайн · база не подключена';cls='sync-pending';
  }
  else if(String(syncShiftId||'').startsWith('local-test-')){label='Локальная тестовая смена';cls='sync-pending';}
  else  if(syncMode==='conflict'||remoteRefreshAvailable){label='Конфликт изменений';cls='sync-error'}
@@ -154,6 +156,8 @@ function renderSyncStatus(){
  if(!el)return;
  if(syncMode==='pilot'){
   el.textContent=label+(syncError?' · '+syncError:'');
+ }else if(!window.CRPilot?.isActive()&&typeof google==='undefined'){
+  el.textContent='Реальная база гостей, списков и истории не подключена на этом устройстве. Данные локального режима не подтверждены сервером.';
  }else if(syncMode==='conflict'||remoteRefreshAvailable){
   el.innerHTML='<span class="sync-warning">На сервере есть другая версия смены. Локальные изменения не перезаписываются.</span>'+
    '<button type="button" class="smallaction" id="sync-review">Проверить статус</button>';
@@ -428,6 +432,7 @@ function loadFlavorCatalog(){
   if(cached){LIST_CATALOG=cached;flavorCatalogLoaded=true;if(tab==='lists')paint()}
   return;
  }
+ if(typeof google==='undefined'||!google.script?.run)return;
  google.script.run.withSuccessHandler(rows=>{LIST_CATALOG=rows||LIST_CATALOG;flavorCatalogLoaded=true;if(tab==='lists')paint()}).withFailureHandler(e=>{flavorCatalogLoaded=false;toast('Не удалось загрузить списки: '+(e.message||e))}).crGetLists();
 }
 function catalogEditRow(kind,item){
