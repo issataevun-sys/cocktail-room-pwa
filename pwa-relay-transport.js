@@ -130,7 +130,7 @@
    return {ok:false,pending:true,error:networkError||'Нет подтверждения сохранения'};
   }
   async function archive(op,target=''){
-   if(!['catalog','history-index','history-detail','guest-history'].includes(op))
+   if(!['catalog','lists','history-index','history-detail','guest-history'].includes(op))
     throw Error('Недопустимый запрос к архиву');
    target=String(target||'');
    const nonce=id(16),tag=await sig('archive|'+deviceId+'|'+nonce+'|'+op+'|'+target);
