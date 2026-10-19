@@ -9,6 +9,7 @@ on:
       - pwa-relay-transport.js
       - pwa-workspace-merge.js
       - pwa-owner-sync.js
+      - pwa-archive.js
       - secure-work-store.js
       - sw.js
       - manifest.webmanifest
@@ -34,7 +35,7 @@ jobs:
       - name: Prepare static-only site
         run: |
           mkdir -p public
-          cp index.html sw.js manifest.webmanifest icon.svg work.html pwa-work-client.js secure-work-store.js pwa-relay-transport.js pwa-workspace-merge.js pwa-owner-sync.js public/
+          cp index.html sw.js manifest.webmanifest icon.svg work.html pwa-work-client.js secure-work-store.js pwa-relay-transport.js pwa-workspace-merge.js pwa-archive.js pwa-owner-sync.js public/
           touch public/.nojekyll
       - name: Configure Pages
         uses: actions/configure-pages@v5

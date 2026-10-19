@@ -1,7 +1,7 @@
 {
   "name": "COCKTAIL ROOM — MANAGEMENT",
   "short_name": "COCKTAIL ROOM",
-  "description": "Управление сменами COCKTAIL ROOM с защищённым локальным хранилищем и автоматической синхронизацией двух устройств.",
+  "description": "Управление сменами COCKTAIL ROOM с защищённым локальным хранилищем и автоматической синхронизацией подтверждённых устройств.",
   "start_url": "./work.html",
   "scope": "./",
   "id": "./",

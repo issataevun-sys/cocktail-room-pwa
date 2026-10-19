@@ -10,6 +10,7 @@ on:
       - work.html
       - pwa-workspace-merge.js
       - pwa-owner-sync.js
+      - pwa-archive.js
       - pwa-relay-transport.js
       - secure-work-store.js
       - pwa-work-client.js
@@ -19,6 +20,8 @@ on:
       - .github/workflows/pwa-pages.yml
       - tests/**
       - .github/workflows/verify-owner-pwa.yml
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read

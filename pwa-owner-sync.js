@@ -1,7 +1,7 @@
 'use strict';
 /**
  * COCKTAIL ROOM owner pilot — real work.html + encrypted local queue.
- * Feature branch only. NOT production guest/shift storage yet.
+ * One secure PWA workspace for owner devices; archive stays separately read-only.
  * The original offline test snapshot is NEVER overwritten by this module.
  */
 (function(){
@@ -223,7 +223,7 @@
  async function activate(given){
   if(!hooks)throw Error('Экран смены ещё не готов');
   if(!window.CRWorkspaceMerge)throw Error('Отсутствует модуль безопасного объединения');
-  if(!STORE()?.isUnlocked())throw Error('Сначала разблокируй зашифрованное хранилище');
+  if(!STORE()?.isUnlocked())await STORE().openDevice();
   const old=await STORE().loadNamed('pilot-config');
   config=given||old;
   if(!config)throw Error('Сначала укажи данные зарегистрированного устройства владельца');
@@ -266,6 +266,9 @@
   hooks.applySnapshot(local.payload,local.revision,!!local.dirty);
   active=true;
   window.CRPWA.enterPilotMode();
+  window.CRArchive?.activate(config).catch(error=>{
+   console.error('Owner archive unavailable; live encrypted shift remains safe',error);
+  });
   // Never print or send enrollment secrets in logs or to GitHub.
   ['pilot-device-secret','pilot-room-key'].forEach(id=>{
    const field=document.getElementById(id);if(field)field.value='';
@@ -387,15 +390,15 @@
   if(!gate)return;
   const panel=document.createElement('section');
   panel.style.cssText='border-top:1px solid #e0e5e8;padding-top:13px;margin-top:18px;font-size:13px;color:#364c58';
-  panel.innerHTML='<h3 style="margin:0 0 8px">Смена владельца · синхронизация PWA</h3>'+
-   '<p style="font-size:12px">Две установки MANAGEMENT с одной зашифрованной базой. Независимые изменения объединяются; пересекающиеся блокируются до ручной сверки. Данные пока не отражаются в iiko.</p>'+
+  panel.innerHTML='<h3 style="margin:0 0 8px">Первое подтверждение устройства</h3>'+
+   '<p style="font-size:12px">Одно приложение на всех подтверждённых устройствах с общей зашифрованной базой. Независимые изменения объединяются; пересекающиеся блокируются до ручной сверки. Данные пока не отражаются в iiko.</p>'+
    '<label>Развёртывание Apps Script /exec<input id="pilot-endpoint" type="url" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px"></label>'+
    '<label>ID устройства владельца<input id="pilot-device-id" autocapitalize="off" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px"></label>'+
    '<label>Личный секрет устройства<input id="pilot-device-secret" type="password" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px"></label>'+
    '<label>Ключ шифрования комнаты<input id="pilot-room-key" type="password" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px"></label>'+
    '<button id="pilot-connect" style="padding:11px 12px;margin-top:9px">Подключить смену владельца</button>'+
    '<button id="pilot-resume" style="padding:11px 12px;margin:9px 0 0 6px">Продолжить сохранённую смену владельца</button>'+
-   '<p id="pilot-msg" style="font-size:12px;color:#6c4950;margin-top:8px">Разблокируй хранилище перед подключением.</p>';
+   '<p id="pilot-msg" style="font-size:12px;color:#6c4950;margin-top:8px">Зарегистрируй устройство один раз. Последующие открытия автоматические.</p>';
   gate.append(panel);
   document.getElementById('pilot-connect').onclick=async()=>{
    showMessage('Проверяем защищённое соединение…');
