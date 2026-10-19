@@ -390,16 +390,17 @@
   if(!gate)return;
   const panel=document.createElement('section');
   panel.style.cssText='border-top:1px solid #e0e5e8;padding-top:13px;margin-top:18px;font-size:13px;color:#364c58';
-  panel.innerHTML='<h3 style="margin:0 0 8px">Первое подтверждение устройства</h3>'+
-   '<p style="font-size:12px">Одно приложение на всех подтверждённых устройствах с общей зашифрованной базой. Независимые изменения объединяются; пересекающиеся блокируются до ручной сверки. Данные пока не отражаются в iiko.</p>'+
-   '<label>Развёртывание Apps Script /exec<input id="pilot-endpoint" type="url" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px"></label>'+
+  panel.innerHTML='<h3 style="margin:0 0 8px">Подтверждение устройства</h3>'+
+   '<p style="font-size:12px">На уже подтверждённом устройстве вход выполняется автоматически. Новое устройство должен один раз зарегистрировать владелец; данные при этом остаются зашифрованными. Офлайн-работа и синхронизация сохранены.</p>'+
+   '<div id="pilot-enrollment-fields" hidden><label>Развёртывание Apps Script /exec<input id="pilot-endpoint" type="url" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px"></label>'+
    '<label>ID устройства владельца<input id="pilot-device-id" autocapitalize="off" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px"></label>'+
    '<label>Личный секрет устройства<input id="pilot-device-secret" type="password" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px"></label>'+
    '<label>Ключ шифрования комнаты<input id="pilot-room-key" type="password" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px"></label>'+
-   '<button id="pilot-connect" style="padding:11px 12px;margin-top:9px">Подключить смену владельца</button>'+
-   '<button id="pilot-resume" style="padding:11px 12px;margin:9px 0 0 6px">Продолжить сохранённую смену владельца</button>'+
+   '<button id="pilot-connect" style="padding:11px 12px;margin-top:9px">Зарегистрировать устройство</button></div>'+
+   '<button id="pilot-resume" style="padding:11px 12px;margin:9px 0 0 0">Открыть подтверждённое устройство</button>'+'<button id="pilot-show-enrollment" style="padding:11px 12px;margin:9px 0 0 6px">Настроить новое устройство</button>'+
    '<p id="pilot-msg" style="font-size:12px;color:#6c4950;margin-top:8px">Зарегистрируй устройство один раз. Последующие открытия автоматические.</p>';
   gate.append(panel);
+  document.getElementById('pilot-show-enrollment').onclick=()=>{document.getElementById('pilot-enrollment-fields').hidden=false;document.getElementById('pilot-show-enrollment').hidden=true;};
   document.getElementById('pilot-connect').onclick=async()=>{
    showMessage('Проверяем защищённое соединение…');
    try{await activate(fields())}catch(e){showMessage('Не удалось подключить: '+String(e?.message||e))}
