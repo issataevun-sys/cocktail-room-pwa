@@ -8,10 +8,10 @@
  const STORE=()=>window.CRWorkStore;
  const clone=x=>JSON.parse(JSON.stringify(x));
  let active=false,transport=null,refreshing=false;
- let state={guests:[],index:null,details:{},visits:{},updatedAt:'',error:''};
+ let state={guests:[],lists:null,index:null,details:{},visits:{},updatedAt:'',error:''};
  const listeners=new Set();
  const emit=()=>{for(const callback of listeners)try{callback(getState())}catch(e){console.error(e)}};
- const getState=()=>({guests:state.guests,index:state.index,updatedAt:state.updatedAt,error:state.error,refreshing});
+ const getState=()=>({guests:state.guests,lists:state.lists,index:state.index,updatedAt:state.updatedAt,error:state.error,refreshing});
  let chain=Promise.resolve();
  function persist(){
   const frozen=clone(state);
@@ -35,7 +35,8 @@
   try{
    const results=await Promise.allSettled([
     transport.archive('catalog'),
-    transport.archive('history-index')
+    transport.archive('history-index'),
+    transport.archive('lists')
    ]);
    let changed=false,errors=[];
    if(results[0].status==='fulfilled'&&Array.isArray(results[0].value)){
@@ -44,6 +45,9 @@
    if(results[1].status==='fulfilled'&&results[1].value?.ok&&Array.isArray(results[1].value.rows)){
     state.index=results[1].value;changed=true;
    }else errors.push('История: '+String(results[1].reason?.message||'недоступна'));
+   if(results[2].status==='fulfilled'&&results[2].value&&Array.isArray(results[2].value.flavors)){
+    state.lists=results[2].value;changed=true;
+   }else errors.push('Списки: '+String(results[2].reason?.message||'недоступны'));
    state.error=errors.join('; ');
    if(changed){state.updatedAt=new Date().toISOString();await persist()}
   }finally{refreshing=false;emit()}
