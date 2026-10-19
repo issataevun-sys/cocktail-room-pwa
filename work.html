@@ -302,6 +302,42 @@ function fmt(n){return Number(n||0).toLocaleString('ru-RU')}
 function displayDate(v){return /^\d{4}-\d{2}-\d{2}$/.test(String(v||''))?String(v).split('-').reverse().join('-'):String(v||'—')}
 function localDay(){const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')}
 function openShift(){return data.shifts.find(s=>s.status==='open')||null}
+function isLocalTestShift(){return String(syncShiftId||'').startsWith('local-test-')}
+async function startLocalTestShift(){
+ if(window.CRPilot?.isActive())return toast('Нельзя запускать локальный тест поверх общей смены');
+ if(!window.CRWorkStore?.isUnlocked())return toast('Зашифрованное хранилище ещё открывается. Повтори через секунду.');
+ const existing=await window.CRWorkStore.loadNamed('snapshot');
+ if(existing?.shiftId&&!String(existing.shiftId).startsWith('local-test-'))
+  return toast('На устройстве есть рабочая смена. Тест не будет её перезаписывать.');
+ if(syncShiftId&&!isLocalTestShift()||data.shifts.some(s=>s.id&&!String(s.id).startsWith('local-test-')))
+  return toast('На устройстве есть другая смена. Тест не будет её перезаписывать.');
+ if(isLocalTestShift()&&data.shifts.some(s=>s.status==='open'))
+  return toast('Тестовая смена уже открыта');
+ if(!isLocalTestShift()){
+  data={shifts:[],hookahs:[],guests:[],tables:[],bookings:[],washings:[],vipHours:[]};
+  syncShiftId='local-test-'+crypto.randomUUID();syncRevision=0;syncDirty=0;syncBaseState=null;
+ }
+ const shift={id:'local-test-'+crypto.randomUUID(),day:localDay(),status:'open',test:true,employees:[''],waiter:'',openedAt:new Date().toISOString()};
+ data.shifts.push(shift);syncMode='offline';syncError='Тестовая смена — только на этом устройстве';
+ try{await window.CRPWA.saveEncryptedNow();tab='shifts';paint()}
+ catch(e){data.shifts.pop();toast('Не удалось сохранить тестовую смену: '+String(e.message||e))}
+}
+async function deleteLocalTestShifts(){
+ if(!isLocalTestShift()||window.CRPilot?.isActive())return toast('Активной локальной тестовой базы нет');
+ if(data.shifts.some(s=>s.id&&!String(s.id).startsWith('local-test-')))
+  return toast('Есть реальные смены, удаление остановлено');
+ const existing=await window.CRWorkStore.loadNamed('snapshot');
+ if(existing?.shiftId&&!String(existing.shiftId).startsWith('local-test-'))
+  return toast('В сохранённой копии есть настоящая смена. Ничего не удалено.');
+ appConfirm('Удалить все локальные тестовые смены, кальяны, брони и VIP? Реальная база Google Sheets не затрагивается.',async()=>{
+  const previous=data,previousId=syncShiftId;
+  data={shifts:[],hookahs:[],guests:[],tables:[],bookings:[],washings:[],vipHours:[]};
+  syncShiftId='local-test-'+crypto.randomUUID();syncMode='offline';syncDirty=0;
+  try{await window.CRPWA.saveEncryptedNow();tab='system';paint();toast('Тестовые смены удалены с этого устройства')}
+  catch(e){data=previous;syncShiftId=previousId;paint();toast('Ошибка удаления: '+String(e.message||e))}
+ });
+}
+
 function metric(label,value){return '<div class="metric"><div class="muted">'+esc(label)+'</div><strong>'+esc(value)+'</strong></div>'}
 
 // All timer deadlines are absolute timestamps; a table can have several active hookahs.
@@ -1365,6 +1401,11 @@ if(tab==='shifts'){
   if(syncMode==='pilot'){
    appConfirm('Закрыть смену владельца? Это действие сначала сохранится локально.',()=>window.CRPilot?.closeShift());return;
   }
+  if(isLocalTestShift()){
+   appConfirm('Закрыть тестовую смену? Она останется доступна для последующего удаления.',()=>{
+    active.status='closed';active.closedAt=new Date().toISOString();save();tab='system';paint();
+   });return;
+  }
   appConfirm('Закрыть общую смену в Google Sheets? Убедись, что изменения синхронизированы.',()=>{
    if(syncDirty||syncBusy||syncMode!=='shared')return toast('Сначала дождись синхронизации');
    google.script.run.withSuccessHandler(()=>{toast('Смена закрыта');initLiveShift()}).withFailureHandler(err=>toast('Ошибка закрытия: '+String(err.message||err))).crLiveCloseShift(active.id);
@@ -1442,6 +1483,17 @@ if(tab==='guests'){
  });
 }
 if(tab==='system'){
+ if(typeof google==='undefined'&&!window.CRPilot?.isActive()){
+  root.innerHTML='<div class="box"><h2>Тестовая смена</h2>'+
+   '<p class="muted">Изолированный тестовый режим на этом устройстве. Не отправляется в рабочую Google-таблицу. Данные шифруются локально.</p>'+
+   (isLocalTestShift()?'<p><strong>Тестовых смен: '+data.shifts.length+'</strong></p>':'<p>Тестовая смена ещё не создана.</p>')+
+   '<div class="actions"><button class="primary" id="test-shift-open">+ Открыть тестовую смену</button>'+
+   (isLocalTestShift()?'<button class="danger" id="test-shift-delete">Удалить все тестовые смены</button>':'')+'</div>'+
+   '<p class="muted">Тестовая смена не синхронизируется между устройствами. Реальные гости и история остаются отдельно.</p></div>';
+  $('test-shift-open').onclick=()=>startLocalTestShift().catch(e=>toast(String(e.message||e)));
+  if($('test-shift-delete'))$('test-shift-delete').onclick=()=>deleteLocalTestShifts().catch(e=>toast(String(e.message||e)));
+  return;
+ }
  if(syncMode==='pilot'){
   const activePilot=openShift();
   root.innerHTML='<div class="box"><h2>COCKTAIL ROOM · MANAGEMENT</h2>'+
