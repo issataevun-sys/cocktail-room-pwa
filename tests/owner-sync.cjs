@@ -10,6 +10,7 @@ const merge=require('../pwa-workspace-merge.js');
 const clone=value=>JSON.parse(JSON.stringify(value));
 let nextOperation=0;
 function rig(shared={revision:0,payload:null,ops:new Map()},stored=new Map()){
+ if(!stored.has('pilot-config'))stored.set('pilot-config',{url:'private-value',deviceId:'private-value',deviceSecret:'private-value',roomEncryptionKey:'private-value'});
  const nodes=new Map(),callbacks={};
  const element=id=>{if(!nodes.has(id))nodes.set(id,{value:'',textContent:'',style:{}});return nodes.get(id)};
  const doc={readyState:'complete',querySelector:()=>({append(){}}),
@@ -81,7 +82,7 @@ function rig(shared={revision:0,payload:null,ops:new Map()},stored=new Map()){
 }
 async function raceAndOfflineClose(){
  const test=rig();
- await test.element('pilot-connect').onclick();
+ await test.app.resume();
  assert.equal(test.app.isActive(),true);
  await test.app.openShift({});
  await test.app.flush();
@@ -120,7 +121,7 @@ async function resumeAcknowledgedPost(){
  stored.set('pilot-work',{payload:clone(base),revision:8,dirty:true,generation:4,
   pending:{operation:oldOperation,shiftId:'pilot-abc'},pendingGeneration:4});
  const test=rig(shared,stored);
- await test.element('pilot-resume').onclick();
+ await test.app.resume();
  assert.equal(test.app.isActive(),true);
  assert.equal(stored.get('pilot-work').revision,9);
  assert.equal(stored.get('pilot-work').pending,null);
@@ -139,7 +140,7 @@ async function resumeWithNewerLocalEdits(){
  stored.set('pilot-work',{payload:edited,revision:4,dirty:true,generation:3,
   pending:{operation:op,shiftId:'pilot-xyz'},pendingGeneration:2});
  const test=rig(shared,stored);
- await test.element('pilot-resume').onclick();
+ await test.app.resume();
  assert.equal(stored.get('pilot-work').dirty,true,'Later edits must remain pending after old ACK');
  await test.app.flush();
  assert.equal(shared.revision,6);
