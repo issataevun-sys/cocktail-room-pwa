@@ -1,49 +1,52 @@
 'use strict';
 /**
- * One app, one owner-device onboarding.
- * No legacy Google popup, demo fork, phrase/password gate, or second workspace.
- * Local data stays encrypted by a non-extractable device-bound WebCrypto key.
+ * COCKTAIL ROOM — temporarily no login/onboarding UI.
+ * Preserve encrypted local data and all server sync modules unchanged.
+ * Device enrollment can be redesigned later; never silently bypass server auth.
  */
 (function(){
- const overlay=document.createElement('div');
- overlay.id='cr-work-gate';
- overlay.style.cssText='position:fixed;inset:0;z-index:99999;display:grid;align-items:start;justify-items:center;overflow-y:auto;background:#0e1721dc;padding:16px;font-family:Arial,sans-serif';
- overlay.innerHTML='<div style="background:white;max-width:520px;width:100%;border-radius:15px;padding:22px;box-shadow:0 15px 55px #0004">'+
-  '<h2 style="margin:0 0 12px">COCKTAIL ROOM</h2>'+
-  '<p style="line-height:1.5;color:#596975">Единое приложение. Подтверждённое устройство открывает смены без дополнительного пароля. Для первого подключения зарегистрируй устройство один раз.</p>'+
-  '<p id="cr-device-status" role="status" style="color:#53656b;font-size:13px">Проверяем ключ устройства…</p></div>';
+ let snapshotProvider=null,restoreSnapshot=null,onConnected=null;
+ let storeReady=false,restored=false;
+ async function saveNow(){
+  if(!storeReady||!snapshotProvider)return false;
+  const snapshot=snapshotProvider();
+  if(!snapshot||!snapshot.state)return false;
+  await window.CRWorkStore.saveNamed('snapshot',snapshot);
+  return true;
+ }
+ async function restore(){
+  if(!storeReady||!restoreSnapshot||restored)return;
+  const snapshot=await window.CRWorkStore.loadNamed('snapshot');
+  if(snapshot&&restoreSnapshot(snapshot))restored=true;
+ }
  window.CRPWA={
   connected:false,
-  enterPilotMode:()=>{overlay.style.display='none';},
-  persistEncrypted:()=>{},
-  saveEncryptedNow:async()=>true,
-  setSnapshotProvider:()=>{},
-  setRestoreSnapshot:()=>{},
-  setOnConnected:()=>{},
-  isOfflineEditing:()=>window.CRPilot?.isActive()&&!navigator.onLine
+  enterPilotMode:()=>{},
+  persistEncrypted:()=>{saveNow().catch(e=>console.error('Encrypted local save failed',e));},
+  saveEncryptedNow:saveNow,
+  setSnapshotProvider:fn=>{snapshotProvider=fn;},
+  setRestoreSnapshot:fn=>{restoreSnapshot=fn;restore().catch(e=>console.error('Encrypted local restore failed',e));},
+  setOnConnected:fn=>{onConnected=fn;},
+  isOfflineEditing:()=>!navigator.onLine
  };
  async function initialize(){
-  const status=document.getElementById('cr-device-status');
   try{
    await window.CRWorkStore.openDevice();
+   storeReady=true;
    const pairing=await window.CRWorkStore.loadNamed('pilot-config');
-   if(!pairing){
-    status.textContent='Устройство ещё не зарегистрировано. Заполни данные подключения ниже один раз.';
-    return;
+   if(pairing&&window.CRPilot){
+    try{await window.CRPilot.resume();return;}
+    catch(e){console.warn('Existing device pairing cannot connect; keeping local data intact',e);}
    }
-   status.textContent='Открываем зашифрованную смену на этом устройстве…';
-   await window.CRPilot.resume();
-  }catch(error){
-   // Do not clear the database or silently replace previous ciphertext.
-   status.textContent='Не удалось открыть приложение: '+String(error?.message||error)+
-    ' Не удаляй данные браузера и приложение, пока не восстановим доступ.';
-   status.style.color='#a33b30';
+   await restore();
+   // No device credentials are requested. Unpaired devices do not sync
+   // to the server; remote identity checks must never be silently bypassed.
+   if(!restored)console.info('COCKTAIL ROOM: no paired device or local snapshot. Offline local mode only.');
+  }catch(e){
+   // Do not erase or re-key encrypted owner data on error.
+   console.error('COCKTAIL ROOM local encrypted database unavailable; data untouched',e);
   }
  }
- const start=()=>{
-  document.body.appendChild(overlay);
-  Promise.resolve().then(initialize);
- };
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
- else start();
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initialize,{once:true});
+ else initialize();
 })();
