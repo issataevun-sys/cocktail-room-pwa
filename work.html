@@ -1672,7 +1672,8 @@ window.CRArchive?.subscribe(archive=>{
  }
  PAST_DATA=archive.index||null;PAST_LAST_ERROR=archive.error||'';
  mergeVisibleGuests();
- if(syncMode==='pilot'&&['guests','past','home','lists','shifts'].includes(tab))paint();
+ if(['guests','past','home','lists'].includes(tab)&&
+    (syncMode==='pilot'||archive.guests?.length||archive.lists||archive.index))paint();
 });
 window.CRPWA.setOnConnected(()=>{
  if(window.CRPilot?.isActive())return;
