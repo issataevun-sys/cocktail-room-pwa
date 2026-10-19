@@ -10,7 +10,7 @@ const work=rd('work.html');
 assert.match(index,/location\.replace\('\.\/work\.html'/);
 assert.equal(manifest.start_url,'./work.html');
 assert.match(manifest.name,/MANAGEMENT/);
-const modules=['pwa-work-client.js','secure-work-store.js','pwa-relay-transport.js','pwa-workspace-merge.js','pwa-owner-sync.js'];
+const modules=['pwa-work-client.js','secure-work-store.js','pwa-relay-transport.js','pwa-workspace-merge.js','pwa-archive.js','pwa-owner-sync.js'];
 for(const name of modules){
  assert.ok(work.includes('./'+name),'Missing work script '+name);
  assert.ok(sw.includes("'./"+name+"'"),'Offline cache missing '+name);
