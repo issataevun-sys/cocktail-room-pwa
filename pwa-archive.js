@@ -18,12 +18,16 @@
   chain=chain.catch(()=>{}).then(()=>STORE().saveNamed('pilot-archive',frozen));
   return chain;
  }
- async function activate(config){
-  if(active)return;
+ async function restoreCached(){
   const cached=await STORE().loadNamed('pilot-archive');
   if(cached&&typeof cached==='object'){
    state={...state,...cached,details:cached.details||{},visits:cached.visits||{}};
+   emit();
   }
+ }
+ async function activate(config){
+  if(active)return;
+  await restoreCached();
   transport=await window.CRRelayTransport.create(config);
   active=true;
   emit();
@@ -71,7 +75,7 @@
   return clone(result);
  }
  window.CRArchive={
-  activate,refresh,getPastDetail,getGuestHistory,getState,
+  activate,restoreCached,refresh,getPastDetail,getGuestHistory,getState,
   subscribe:callback=>{listeners.add(callback);callback(getState());return()=>listeners.delete(callback)}
  };
  window.addEventListener('online',()=>{if(active)refresh().catch(console.error)});
