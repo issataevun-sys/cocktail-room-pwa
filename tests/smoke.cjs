@@ -7,12 +7,12 @@ function source(path){return fs.readFileSync(path,'utf8')}
 const html=source('work.html');
 const inline=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(x=>x[1]);
 assert.equal(inline.length,1,'Exactly one inline script is expected');
-for(const path of ['pwa-work-client.js','secure-work-store.js','pwa-relay-transport.js','pwa-workspace-merge.js','pwa-owner-sync.js','sw.js']){
+for(const path of ['pwa-work-client.js','secure-work-store.js','pwa-relay-transport.js','pwa-workspace-merge.js','pwa-archive.js','pwa-owner-sync.js','sw.js']){
  new vm.Script(source(path),{filename:path});
 }
 new vm.Script(inline[0],{filename:'work.html:inline'});
 console.log('✓ All application JavaScript sources parse');
-for(const file of ['pwa-owner-sync.js','pwa-workspace-merge.js','pwa-relay-transport.js','secure-work-store.js']){
+for(const file of ['pwa-owner-sync.js','pwa-archive.js','pwa-workspace-merge.js','pwa-relay-transport.js','secure-work-store.js']){
  assert.ok(html.includes('<script src="./'+file+'"></script>'),'Missing '+file);
 }
 assert.ok(html.includes("if(tab==='past'){if(syncMode==='pilot')pilotPastRender()"),'PWA history not wired');
@@ -58,3 +58,8 @@ pilot.hooks.closeShift();
 assert.throws(()=>pilot.hooks.createShift({day:'2026-10-18',waiter:'Дубликат'}),/уже существует/);
 assert.ok(changes>=3&&painted>=3,'UI and persistence notified');
 console.log('✓ Offline close -> next shift -> history and duplicate protection');
+
+assert.ok(!source('pwa-work-client.js').includes('cr-offline-secret'),'No phrase input in owner application');
+assert.ok(!source('secure-work-store.js').includes('function derive('),'No phrase-based key derivation');
+assert.ok(html.includes('CRArchive.getGuestHistory')&&html.includes('CRArchive.getPastDetail'),'Read-only archive visible in single app');
+console.log('✓ No phrase login; live guest and historical archive integration');
