@@ -778,7 +778,11 @@ function showOrder(id,table){
  const tableNumber=Number(form.get('table'));
  if(!Number.isInteger(tableNumber)||tableNumber<30||tableNumber>40)return toast('Выберите стол');
  let warning=grams!==null&&(grams<14||grams>28)?'Граммовка '+grams+' г вне диапазона 14–28 г. Всё равно сохранить?':'';
- if(price===3000)warning+=(warning?'\n\n':'')+'Вы отбиваете стафф-кальян за 3 000 ₸, всё верно?';
+ if(price===3000){
+  const guestName=String(form.get('guest')||'').trim().toLocaleLowerCase('ru');
+  const staffGuest=REMOTE_GUESTS.some(g=>String(g.name||'').trim().toLocaleLowerCase('ru')===guestName&&g.category==='Стафф');
+  if(!staffGuest)warning+=(warning?'\n\n':'')+'Цена 3 000 ₸ без подтверждения доступна только категории «Стафф». Продолжить?';
+ }
  if(price===4000){
   const visit=currentTableSession(shift,tableNumber);
   const related=data.hookahs.filter(o=>o.shiftId===shift.id&&Number(o.table)===tableNumber&&o.id!==item?.id&&
