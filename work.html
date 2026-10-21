@@ -638,7 +638,7 @@ function showGuestEditor(id){
  '<form id="guest-edit-form"><div class="formgrid">'+
  '<label>Имя<input name="name" required maxlength="90" placeholder="Имя гостя"></label>'+
  '<label>Телефон<input name="phone" type="tel" maxlength="40" inputmode="tel" placeholder="+7 000 000 00 00"></label>'+
- '<label>Категория<select name="category"><option value="">Без категории</option>'+['Гость','Новый гость','Постоянщик','Редкий гость','Конфликтный'].map(x=>'<option>'+x+'</option>').join('')+'</select></label>'+
+ '<label>Категория<select name="category"><option value="">Без категории</option>'+['Гость','Новый гость','Постоянщик','Редкий гость','Конфликтный','Стафф'].map(x=>'<option>'+x+'</option>').join('')+'</select></label>'+
  '<label>Дата рождения (без года)<div class="birthday-fields">'+
  '<input name="birthday_day" type="number" inputmode="numeric" min="1" max="31" placeholder="День">'+
  '<select name="birthday_month"><option value="">Месяц</option>'+['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'].map((month,i)=>'<option value="'+String(i+1).padStart(2,'0')+'">'+month+'</option>').join('')+'</select></div></label>'+
